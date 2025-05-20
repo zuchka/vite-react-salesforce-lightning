@@ -10,7 +10,7 @@ import {
   Spinner,
   Input,
 } from "@salesforce/design-system-react";
-import { fetchVideos, Video } from "../../services/supabase";
+import { fetchVideos, type Video } from "../../services/supabase";
 
 const VideosList: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);

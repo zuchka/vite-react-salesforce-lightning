@@ -10,7 +10,7 @@ import {
   Spinner,
   Input,
 } from "@salesforce/design-system-react";
-import { fetchUsers, User } from "../../services/supabase";
+import { fetchUsers, type User } from "../../services/supabase";
 
 const UsersList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);

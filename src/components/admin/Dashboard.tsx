@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Icon, Spinner } from "@salesforce/design-system-react";
-import { fetchStats, Video } from "../../services/supabase";
+import { fetchStats, type Video } from "../../services/supabase";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{

@@ -10,7 +10,7 @@ import {
   Spinner,
   Input,
 } from "@salesforce/design-system-react";
-import { fetchCategories, Category } from "../../services/supabase";
+import { fetchCategories, type Category } from "../../services/supabase";
 
 const CategoriesView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);

@@ -10,7 +10,7 @@ import {
   Spinner,
   Input,
 } from "@salesforce/design-system-react";
-import { fetchComments, Comment } from "../../services/supabase";
+import { fetchComments, type Comment } from "../../services/supabase";
 
 const CommentsView: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
