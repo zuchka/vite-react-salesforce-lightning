@@ -49,7 +49,6 @@ export const SimpleDataTable: React.FC<SimpleDataTableProps> = ({
   const tableClasses = [
     "slds-table",
     fixedLayout ? "slds-table_fixed-layout" : "",
-    striped ? "slds-table_striped" : "",
     noRowHover ? "" : "slds-table_cell-buffer",
     className,
   ]
@@ -98,11 +97,16 @@ export const SimpleDataTable: React.FC<SimpleDataTableProps> = ({
               </tr>
             ) : (
               items.map((item, rowIndex) => (
-                <tr key={rowIndex} className="slds-hint-parent">
+                <tr
+                  key={rowIndex}
+                  className="slds-hint-parent"
+                  style={{ backgroundColor: "#1d1e32" }} // Apply dark background to all rows
+                >
                   {columns.map((column, colIndex) => (
                     <td
                       key={`${rowIndex}-${colIndex}`}
                       data-label={column.label}
+                      style={{ borderTop: "1px solid #2d2e42" }} // Add consistent borders
                     >
                       {column.render
                         ? column.render(item)

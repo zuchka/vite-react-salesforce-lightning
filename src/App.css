@@ -228,7 +228,15 @@ input.slds-input::placeholder {
   background: #2a223a !important;
 }
 
-.slds-table_striped tbody tr:nth-of-type(odd) td {
+/* Make all table rows have dark background */
+.slds-table tbody tr td {
+  background: #1d1e32 !important;
+  border-top: 1px solid #2d2e42 !important;
+}
+
+/* Remove striping as we want all rows to be dark */
+.slds-table_striped tbody tr:nth-of-type(odd) td,
+.slds-table_striped tbody tr:nth-of-type(even) td {
   background: #1d1e32 !important;
 }
 
