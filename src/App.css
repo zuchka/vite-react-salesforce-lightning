@@ -1,0 +1,143 @@
+body, #root, .slds-scope {
+  background: #11131a !important;
+  color: #f4f4f6 !important;
+}
+
+.slds-context-bar, .navbar-large-text, .slds-context-bar__primary, .slds-context-bar__secondary, .slds-context-bar__tertiary {
+  background: #181a23 !important;
+  color: #f4f4f6 !important;
+  border-bottom: 1px solid #23243a;
+}
+
+.slds-context-bar__label-action, .slds-context-bar__app-name, .slds-truncate {
+  color: #f4f4f6 !important;
+}
+
+.slds-context-bar__item a:hover, .slds-context-bar__item a:focus {
+  color: #b18cff !important;
+}
+
+.slds-button_brand, .slds-button.slds-button_brand {
+  background: linear-gradient(90deg, #a259ff 0%, #6d28d9 100%) !important;
+  border: none !important;
+  color: #fff !important;
+}
+
+.slds-button_brand:hover, .slds-button.slds-button_brand:hover {
+  background: linear-gradient(90deg, #b18cff 0%, #7c3aed 100%) !important;
+  color: #fff !important;
+}
+
+.slds-button_outline-brand {
+  border: 2px solid #a259ff !important;
+  color: #a259ff !important;
+  background: transparent !important;
+}
+
+.slds-button_outline-brand:hover {
+  background: #2a223a !important;
+  color: #b18cff !important;
+  border-color: #b18cff !important;
+}
+
+.slds-background_color-gray-1, .custom-footer-bg {
+  background: #181a23 !important;
+}
+
+footer, .custom-footer-bg {
+  color: #f4f4f6 !important;
+}
+
+a, .slds-text-body_small, .slds-text-heading_small {
+  color: #b18cff;
+}
+
+a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.slds-text-heading_large, .slds-text-heading_medium, .slds-text-heading_small {
+  color: #fff !important;
+}
+
+.slds-text-color_weak {
+  color: #b18cff !important;
+}
+
+input.slds-input {
+  background: #23243a !important;
+  color: #fff !important;
+  border: 1px solid #3a3b4d !important;
+}
+
+input.slds-input::placeholder {
+  color: #b18cff !important;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.navbar-large-text {
+  font-size: 1.25rem;
+}
+
+.testimonial-card {
+  background: #181a23 !important;
+  color: #fff !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.15);
+  border: 1px solid #23243a;
+}
+
+.testimonial-author {
+  color: #b18cff !important;
+}
+
+.admin-box {
+  background: #23243a !important;
+  color: #fff !important;
+  border-radius: 8px;
+  border: 1px solid #2d2e42;
+  box-shadow: 0 1px 6px 0 rgba(0,0,0,0.10);
+}
