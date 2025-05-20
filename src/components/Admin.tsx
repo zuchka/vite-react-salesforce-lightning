@@ -4,9 +4,9 @@ import {
   GlobalNavigationBar,
   GlobalNavigationBarRegion,
   Icon,
-  SplitView,
-  SplitViewHeader,
-  SplitViewListbox,
+  Card,
+  Tabs,
+  TabsPanel,
 } from "@salesforce/design-system-react";
 import "@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css";
 import "../App.css";
@@ -53,13 +53,6 @@ function Admin() {
     }
   };
 
-  // Handle sidebar item selection
-  const handleSelect = (event: Event, data: { item: any }) => {
-    if (data && data.item) {
-      setActiveView(data.item.id);
-    }
-  };
-
   return (
     <div className="slds-scope">
       <GlobalNavigationBar>
@@ -80,82 +73,32 @@ function Admin() {
         </GlobalNavigationBarRegion>
       </GlobalNavigationBar>
 
-      <div
-        className="slds-grid slds-grid_vertical"
-        style={{ height: "calc(100vh - 3.125rem)" }}
-      >
-        <div
-          className="slds-col slds-size_1-of-1"
-          style={{ flex: "1 1 auto", overflow: "hidden" }}
-        >
-          <SplitView
-            id="admin-splitview"
-            className="slds-grid slds-grid_vertical"
-            style={{ height: "100%" }}
-          >
-            <SplitViewHeader
-              key="1"
-              icon={
-                <Icon
-                  assistiveText={{ label: "Admin" }}
-                  category="standard"
-                  name="connected_apps"
-                />
-              }
-              title="Admin Portal"
-              truncate
-              variant="objectHome"
-            />
-            <div
-              className="slds-grid slds-grid_vertical"
-              style={{ flex: "1 1 auto", overflow: "hidden" }}
-            >
-              <div
-                className="slds-grid slds-grid_horizontal"
-                style={{ flex: "1 1 auto", overflow: "hidden" }}
+      <div className="admin-content-wrapper">
+        <div className="admin-sidebar">
+          <div className="admin-sidebar-header">
+            <h2 className="slds-text-heading_medium slds-p-around_medium">
+              Admin Portal
+            </h2>
+          </div>
+          <ul className="admin-sidebar-menu">
+            {navItems.map((item) => (
+              <li
+                key={item.id}
+                className={`admin-sidebar-item ${activeView === item.id ? "admin-sidebar-item-active" : ""}`}
+                onClick={() => setActiveView(item.id)}
               >
-                <div
-                  className="slds-col slds-size_1-of-6"
-                  style={{
-                    borderRight: "1px solid #23243a",
-                    backgroundColor: "#181a23",
-                  }}
-                >
-                  <SplitViewListbox
-                    className="slds-grid slds-grid_vertical"
-                    key="2"
-                    labels={{
-                      header: "Navigation",
-                    }}
-                    options={navItems.map((item) => ({
-                      id: item.id,
-                      label: item.label,
-                      icon: (
-                        <Icon
-                          assistiveText={{ label: item.label }}
-                          category="standard"
-                          name={item.icon}
-                          size="small"
-                        />
-                      ),
-                      selected: activeView === item.id,
-                    }))}
-                    events={{
-                      onSelect: handleSelect,
-                    }}
-                    listboxClassName="slds-p-vertical_none"
-                  />
-                </div>
-                <div
-                  className="slds-col slds-size_5-of-6 slds-p-around_large"
-                  style={{ overflow: "auto", backgroundColor: "#11131a" }}
-                >
-                  {renderActiveView()}
-                </div>
-              </div>
-            </div>
-          </SplitView>
+                <Icon
+                  category="standard"
+                  name={item.icon}
+                  size="small"
+                  className="admin-sidebar-icon"
+                />
+                <span>{item.label}</span>
+              </li>
+            ))}
+          </ul>
         </div>
+        <div className="admin-main-content">{renderActiveView()}</div>
       </div>
     </div>
   );

@@ -287,3 +287,82 @@ input.slds-input::placeholder {
   border-top: none !important;
   background: #23243a !important;
 }
+
+/* Custom Admin Layout */
+.admin-content-wrapper {
+  display: flex;
+  height: calc(100vh - 50px);
+  background-color: #11131a;
+}
+
+.admin-sidebar {
+  width: 240px;
+  background-color: #181a23;
+  border-right: 1px solid #23243a;
+  flex-shrink: 0;
+}
+
+.admin-sidebar-header {
+  border-bottom: 1px solid #23243a;
+}
+
+.admin-sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-sidebar-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  color: #f4f4f6;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+  transition: background-color 0.2s ease;
+}
+
+.admin-sidebar-item:hover {
+  background-color: #23243a;
+  color: #b18cff;
+}
+
+.admin-sidebar-item-active {
+  background-color: #2a223a;
+  border-left: 4px solid #a259ff;
+  color: #b18cff;
+}
+
+.admin-sidebar-icon {
+  margin-right: 12px;
+}
+
+.admin-main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #11131a;
+}
+
+/* Fixes for SLDS compatibility */
+.slds-scope .slds-icon {
+  fill: currentColor;
+}
+
+.slds-icon_container {
+  margin-right: 8px;
+}
+
+/* Fix for buttons and inputs */
+.slds-button {
+  min-height: 32px;
+}
+
+.slds-scope .slds-card {
+  margin-bottom: 1rem;
+}
+
+.slds-scope .slds-spinner__dot-a:before,
+.slds-scope .slds-spinner__dot-b:before {
+  background-color: #b18cff;
+}

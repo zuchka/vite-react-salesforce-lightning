@@ -92,7 +92,7 @@ const Analytics: React.FC = () => {
             const { data: categoryData } = await supabase
               .from(primaryTable)
               .select(`${categoryColumn}`)
-              .filter(`${categoryColumn}`, "not.is", null);
+              .not(`${categoryColumn}`, "is", null);
 
             if (categoryData) {
               // Count occurrences of each category

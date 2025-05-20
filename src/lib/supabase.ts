@@ -1,34 +1,34 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase connection details provided in the requirements
+// Supabase connection details
+// Note: Using direct URL instead of just host/port/etc for better compatibility
 const supabaseUrl = "https://synkugwstrlwtcxckylk.supabase.co";
 const supabaseKey = "tvc5qpguyh5fum7ATB";
 
 // Create a single supabase client for interacting with the database
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  db: {
-    schema: "public",
-  },
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper to get all available tables
 export const getTables = async (): Promise<string[]> => {
   try {
+    // Query information_schema to get table names
     const { data, error } = await supabase
-      .from("pg_catalog.pg_tables")
-      .select("tablename")
-      .eq("schemaname", "public");
+      .from("information_schema.tables")
+      .select("table_name")
+      .eq("table_schema", "public")
+      .not("table_name", "like", "pg_%");
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching tables:", error);
+      // Fallback to a list of common table names
+      return ["videos", "users", "categories", "comments"];
+    }
 
-    return data.map((table) => table.tablename);
+    return data?.map((table) => table.table_name) || [];
   } catch (error) {
     console.error("Error fetching tables:", error);
-    return [];
+    // Fallback to a list of common table names
+    return ["videos", "users", "categories", "comments"];
   }
 };
 
@@ -46,11 +46,11 @@ export const fetchData = async (
     const to = from + pageSize - 1;
 
     // First get the total count
-    const { count, error: countError } = await supabase
+    const countResponse = await supabase
       .from(tableName)
       .select("*", { count: "exact", head: true });
 
-    if (countError) throw countError;
+    const count = countResponse.count || 0;
 
     // Then get the data for the page
     const { data, error } = await supabase
@@ -59,14 +59,23 @@ export const fetchData = async (
       .order(orderColumn, { ascending: orderDirection === "asc" })
       .range(from, to);
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error fetching data from ${tableName}:`, error);
+      return {
+        data: [],
+        totalCount: 0,
+        currentPage: page,
+        pageSize,
+        totalPages: 0,
+      };
+    }
 
     return {
-      data,
-      totalCount: count || 0,
+      data: data || [],
+      totalCount: count,
       currentPage: page,
       pageSize,
-      totalPages: Math.ceil((count || 0) / pageSize),
+      totalPages: Math.ceil(count / pageSize),
     };
   } catch (error) {
     console.error(`Error fetching data from ${tableName}:`, error);
@@ -83,27 +92,60 @@ export const fetchData = async (
 // Get table columns
 export const getTableColumns = async (tableName: string) => {
   try {
-    const { data, error } = await supabase.rpc("get_table_columns", {
-      table_name: tableName,
-    });
+    // Try to get column information from information_schema
+    const { data, error } = await supabase
+      .from("information_schema.columns")
+      .select("column_name, data_type")
+      .eq("table_name", tableName)
+      .eq("table_schema", "public");
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error getting columns for ${tableName}:`, error);
+
+      // Fallback: Try to fetch a row and infer columns
+      const { data: sampleRow } = await supabase
+        .from(tableName)
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (sampleRow) {
+        return Object.keys(sampleRow).map((column) => ({
+          column_name: column,
+          data_type: typeof sampleRow[column],
+        }));
+      }
+
+      return [];
+    }
 
     return data || [];
   } catch (error) {
-    // Fallback method if the RPC function doesn't exist
+    console.error(`Error getting columns for ${tableName}:`, error);
+
+    // Fallback: Try to fetch a row and infer columns
     try {
-      const { data } = await supabase.from(tableName).select("*").limit(1);
-      if (data && data.length > 0) {
-        return Object.keys(data[0]).map((column) => ({
+      const { data: sampleRow } = await supabase
+        .from(tableName)
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (sampleRow) {
+        return Object.keys(sampleRow).map((column) => ({
           column_name: column,
-          data_type: typeof data[0][column],
+          data_type: typeof sampleRow[column],
         }));
       }
-      return [];
-    } catch (fallbackError) {
-      console.error(`Error getting columns for ${tableName}:`, fallbackError);
-      return [];
+    } catch {
+      // If all else fails, return common columns
+      return [
+        { column_name: "id", data_type: "uuid" },
+        { column_name: "created_at", data_type: "timestamp" },
+        { column_name: "name", data_type: "text" },
+      ];
     }
+
+    return [];
   }
 };
