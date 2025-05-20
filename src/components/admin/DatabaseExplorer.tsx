@@ -7,8 +7,8 @@ import {
   ButtonGroup,
   Icon,
   Spinner,
+  Tabs,
   TabsPanel,
-  Tab,
   Input,
 } from "@salesforce/design-system-react";
 import {
@@ -33,6 +33,7 @@ const DatabaseExplorer: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [sqlQuery, setSqlQuery] = useState("");
+  const [activeTabId, setActiveTabId] = useState("data-view");
   const pageSize = 25;
 
   const loadTables = async () => {
@@ -242,231 +243,222 @@ const DatabaseExplorer: React.FC = () => {
         <div className="slds-col slds-size_3-of-4">
           <Card className="admin-box">
             <div className="slds-p-around_medium">
-              <TabsPanel className="slds-tabs_card">
-                <Tab
-                  label="Data View"
-                  id="data-view"
-                  panelContent={
-                    <div className="slds-p-around_medium">
-                      {selectedTable ? (
-                        <>
-                          <h2 className="slds-text-heading_medium slds-m-bottom_medium">
-                            {selectedTable} {loading ? " (Loading...)" : ""}
-                          </h2>
+              <Tabs
+                id="database-explorer-tabs"
+                className="slds-tabs_card"
+                onSelect={(tabId: string) => setActiveTabId(tabId)}
+              >
+                <TabsPanel label="Data View" id="data-view">
+                  <div className="slds-p-around_medium">
+                    {selectedTable ? (
+                      <>
+                        <h2 className="slds-text-heading_medium slds-m-bottom_medium">
+                          {selectedTable} {loading ? " (Loading...)" : ""}
+                        </h2>
 
-                          {loading ? (
-                            <div
-                              className="slds-is-relative"
-                              style={{ height: "200px" }}
-                            >
-                              <Spinner
-                                assistiveText={{ label: "Loading data" }}
-                                size="large"
-                                variant="brand"
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              <DataTable
-                                items={tableData}
-                                columns={getColumnsForTable()}
-                                id="table-data"
-                                noRowHover={false}
-                                className="slds-table_striped"
-                                fixedLayout
-                              />
+                        {loading ? (
+                          <div
+                            className="slds-is-relative"
+                            style={{ height: "200px" }}
+                          >
+                            <Spinner
+                              assistiveText={{ label: "Loading data" }}
+                              size="large"
+                              variant="brand"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <DataTable
+                              items={tableData}
+                              columns={getColumnsForTable()}
+                              id="table-data"
+                              noRowHover={false}
+                              className="slds-table_striped"
+                              fixedLayout
+                            />
 
-                              <div className="slds-grid slds-grid_align-spread slds-m-top_medium">
-                                <div>
-                                  <p className="slds-text-color_weak">
-                                    Showing{" "}
-                                    {tableData.length > 0
-                                      ? (page - 1) * pageSize + 1
-                                      : 0}{" "}
-                                    to{" "}
-                                    {(page - 1) * pageSize + tableData.length}{" "}
-                                    of {totalCount} records
-                                  </p>
-                                </div>
-                                <div>
-                                  <ButtonGroup>
-                                    <Button
-                                      label="Previous"
-                                      onClick={handlePrevious}
-                                      disabled={page <= 1}
-                                      iconCategory="utility"
-                                      iconName="chevronleft"
-                                      iconPosition="left"
-                                    />
-                                    <Button
-                                      label="Next"
-                                      onClick={handleNext}
-                                      disabled={!hasMore}
-                                      iconCategory="utility"
-                                      iconName="chevronright"
-                                      iconPosition="right"
-                                    />
-                                  </ButtonGroup>
-                                </div>
+                            <div className="slds-grid slds-grid_align-spread slds-m-top_medium">
+                              <div>
+                                <p className="slds-text-color_weak">
+                                  Showing{" "}
+                                  {tableData.length > 0
+                                    ? (page - 1) * pageSize + 1
+                                    : 0}{" "}
+                                  to {(page - 1) * pageSize + tableData.length}{" "}
+                                  of {totalCount} records
+                                </p>
                               </div>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="slds-text-align_center slds-p-around_xx-large slds-text-color_weak">
-                          <Icon
-                            category="utility"
-                            name="table"
-                            size="large"
-                            className="slds-m-bottom_small"
-                          />
-                          <h2 className="slds-text-heading_medium">
-                            Select a table from the list
-                          </h2>
-                        </div>
-                      )}
-                    </div>
-                  }
-                />
-                <Tab
-                  label="SQL Query"
-                  id="sql-query"
-                  panelContent={
-                    <div className="slds-p-around_medium">
-                      <h2 className="slds-text-heading_medium slds-m-bottom_medium">
-                        Custom SQL Query
-                      </h2>
-
-                      <div className="slds-form-element slds-m-bottom_large">
-                        <label
-                          className="slds-form-element__label"
-                          htmlFor="sql-query-input"
-                        >
-                          Enter SQL Query
-                        </label>
-                        <div className="slds-form-element__control">
-                          <textarea
-                            id="sql-query-input"
-                            className="slds-textarea"
-                            placeholder="SELECT * FROM users LIMIT 25;"
-                            rows={5}
-                            value={sqlQuery}
-                            onChange={(e) => setSqlQuery(e.target.value)}
-                            style={{
-                              backgroundColor: "#23243a",
-                              color: "#f4f4f6",
-                              border: "1px solid #3a3b4d",
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <Button
-                        label="Execute Query"
-                        variant="brand"
-                        onClick={handleSqlExecute}
-                        disabled={!sqlQuery.trim()}
-                      />
-
-                      <div className="slds-m-top_large">
-                        <p className="slds-text-color_weak">
-                          Note: For security reasons, SQL query execution is
-                          limited to read-only operations. Write operations
-                          should be performed through the proper API endpoints.
-                        </p>
-                      </div>
-                    </div>
-                  }
-                />
-                <Tab
-                  label="Table Structure"
-                  id="table-structure"
-                  panelContent={
-                    <div className="slds-p-around_medium">
-                      {selectedTable ? (
-                        <>
-                          <h2 className="slds-text-heading_medium slds-m-bottom_medium">
-                            {selectedTable} Structure{" "}
-                            {loading ? " (Loading...)" : ""}
-                          </h2>
-
-                          {loading ? (
-                            <div
-                              className="slds-is-relative"
-                              style={{ height: "200px" }}
-                            >
-                              <Spinner
-                                assistiveText={{
-                                  label: "Loading table structure",
-                                }}
-                                size="large"
-                                variant="brand"
-                              />
+                              <div>
+                                <ButtonGroup>
+                                  <Button
+                                    label="Previous"
+                                    onClick={handlePrevious}
+                                    disabled={page <= 1}
+                                    iconCategory="utility"
+                                    iconName="chevronleft"
+                                    iconPosition="left"
+                                  />
+                                  <Button
+                                    label="Next"
+                                    onClick={handleNext}
+                                    disabled={!hasMore}
+                                    iconCategory="utility"
+                                    iconName="chevronright"
+                                    iconPosition="right"
+                                  />
+                                </ButtonGroup>
+                              </div>
                             </div>
-                          ) : (
-                            <table className="slds-table slds-table_cell-buffer slds-table_bordered">
-                              <thead>
-                                <tr className="slds-line-height_reset">
-                                  <th scope="col">
-                                    <div
-                                      className="slds-truncate"
-                                      title="Column Name"
-                                    >
-                                      Column Name
-                                    </div>
-                                  </th>
-                                  <th scope="col">
-                                    <div
-                                      className="slds-truncate"
-                                      title="Data Type"
-                                    >
-                                      Data Type
-                                    </div>
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tableColumns.map((column) => (
-                                  <tr key={column.column_name}>
-                                    <td>
-                                      <div
-                                        className="slds-truncate"
-                                        title={column.column_name}
-                                      >
-                                        {column.column_name}
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <div
-                                        className="slds-truncate"
-                                        title={column.data_type}
-                                      >
-                                        {column.data_type}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
-                        </>
-                      ) : (
-                        <div className="slds-text-align_center slds-p-around_xx-large slds-text-color_weak">
-                          <Icon
-                            category="utility"
-                            name="table"
-                            size="large"
-                            className="slds-m-bottom_small"
-                          />
-                          <h2 className="slds-text-heading_medium">
-                            Select a table to view its structure
-                          </h2>
-                        </div>
-                      )}
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <div className="slds-text-align_center slds-p-around_xx-large slds-text-color_weak">
+                        <Icon
+                          category="utility"
+                          name="table"
+                          size="large"
+                          className="slds-m-bottom_small"
+                        />
+                        <h2 className="slds-text-heading_medium">
+                          Select a table from the list
+                        </h2>
+                      </div>
+                    )}
+                  </div>
+                </TabsPanel>
+                <TabsPanel label="SQL Query" id="sql-query">
+                  <div className="slds-p-around_medium">
+                    <h2 className="slds-text-heading_medium slds-m-bottom_medium">
+                      Custom SQL Query
+                    </h2>
+
+                    <div className="slds-form-element slds-m-bottom_large">
+                      <label
+                        className="slds-form-element__label"
+                        htmlFor="sql-query-input"
+                      >
+                        Enter SQL Query
+                      </label>
+                      <div className="slds-form-element__control">
+                        <textarea
+                          id="sql-query-input"
+                          className="slds-textarea"
+                          placeholder="SELECT * FROM users LIMIT 25;"
+                          rows={5}
+                          value={sqlQuery}
+                          onChange={(e) => setSqlQuery(e.target.value)}
+                          style={{
+                            backgroundColor: "#23243a",
+                            color: "#f4f4f6",
+                            border: "1px solid #3a3b4d",
+                          }}
+                        />
+                      </div>
                     </div>
-                  }
-                />
-              </TabsPanel>
+
+                    <Button
+                      label="Execute Query"
+                      variant="brand"
+                      onClick={handleSqlExecute}
+                      disabled={!sqlQuery.trim()}
+                    />
+
+                    <div className="slds-m-top_large">
+                      <p className="slds-text-color_weak">
+                        Note: For security reasons, SQL query execution is
+                        limited to read-only operations. Write operations should
+                        be performed through the proper API endpoints.
+                      </p>
+                    </div>
+                  </div>
+                </TabsPanel>
+                <TabsPanel label="Table Structure" id="table-structure">
+                  <div className="slds-p-around_medium">
+                    {selectedTable ? (
+                      <>
+                        <h2 className="slds-text-heading_medium slds-m-bottom_medium">
+                          {selectedTable} Structure{" "}
+                          {loading ? " (Loading...)" : ""}
+                        </h2>
+
+                        {loading ? (
+                          <div
+                            className="slds-is-relative"
+                            style={{ height: "200px" }}
+                          >
+                            <Spinner
+                              assistiveText={{
+                                label: "Loading table structure",
+                              }}
+                              size="large"
+                              variant="brand"
+                            />
+                          </div>
+                        ) : (
+                          <table className="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                              <tr className="slds-line-height_reset">
+                                <th scope="col">
+                                  <div
+                                    className="slds-truncate"
+                                    title="Column Name"
+                                  >
+                                    Column Name
+                                  </div>
+                                </th>
+                                <th scope="col">
+                                  <div
+                                    className="slds-truncate"
+                                    title="Data Type"
+                                  >
+                                    Data Type
+                                  </div>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tableColumns.map((column) => (
+                                <tr key={column.column_name}>
+                                  <td>
+                                    <div
+                                      className="slds-truncate"
+                                      title={column.column_name}
+                                    >
+                                      {column.column_name}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div
+                                      className="slds-truncate"
+                                      title={column.data_type}
+                                    >
+                                      {column.data_type}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </>
+                    ) : (
+                      <div className="slds-text-align_center slds-p-around_xx-large slds-text-color_weak">
+                        <Icon
+                          category="utility"
+                          name="table"
+                          size="large"
+                          className="slds-m-bottom_small"
+                        />
+                        <h2 className="slds-text-heading_medium">
+                          Select a table to view its structure
+                        </h2>
+                      </div>
+                    )}
+                  </div>
+                </TabsPanel>
+              </Tabs>
             </div>
           </Card>
         </div>
