@@ -4,9 +4,8 @@ import {
   GlobalNavigationBar,
   GlobalNavigationBarRegion,
   Icon,
-  Tabs,
-  TabsPanel,
 } from "@salesforce/design-system-react";
+import { SimpleTabs, TabPanel } from "./admin/SimpleTabs";
 import "@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css";
 import "../App.css";
 
@@ -52,13 +51,12 @@ function Admin() {
           Admin Dashboard
         </div>
 
-        <Tabs
-          id="admin-dashboard-tabs"
-          className="custom-tabs"
+        <SimpleTabs
           variant="scoped"
           onSelect={handleTabSelect}
+          initialActiveTabIndex={activeTab}
         >
-          <TabsPanel label="Overview" id="overview-tab">
+          <TabPanel label="Overview" id="overview-tab">
             <div className="slds-p-around_small">
               <DashboardStats />
               <div className="slds-grid slds-wrap slds-gutters">
@@ -70,28 +68,28 @@ function Admin() {
                 </div>
               </div>
             </div>
-          </TabsPanel>
-          <TabsPanel label="Films" id="films-tab">
+          </TabPanel>
+          <TabPanel label="Films" id="films-tab">
             <div className="slds-p-around_small">
               <FilmsList />
             </div>
-          </TabsPanel>
-          <TabsPanel label="Customers" id="customers-tab">
+          </TabPanel>
+          <TabPanel label="Customers" id="customers-tab">
             <div className="slds-p-around_small">
               <CustomersList />
             </div>
-          </TabsPanel>
-          <TabsPanel label="Rentals" id="rentals-tab">
+          </TabPanel>
+          <TabPanel label="Rentals" id="rentals-tab">
             <div className="slds-p-around_small">
               <RentalsList />
             </div>
-          </TabsPanel>
-          <TabsPanel label="Analytics" id="analytics-tab">
+          </TabPanel>
+          <TabPanel label="Analytics" id="analytics-tab">
             <div className="slds-p-around_small">
               <SalesByCategoryList />
             </div>
-          </TabsPanel>
-        </Tabs>
+          </TabPanel>
+        </SimpleTabs>
       </div>
     </div>
   );

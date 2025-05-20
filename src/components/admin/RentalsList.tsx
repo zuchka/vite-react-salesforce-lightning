@@ -9,8 +9,8 @@ import {
   ButtonGroup,
   Button,
   Pill,
-  Dropdown,
 } from "@salesforce/design-system-react";
+import SimpleDropdown from "./SimpleDropdown";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
@@ -389,8 +389,7 @@ const RentalsList: React.FC = () => {
       headerActions={
         <div className="slds-grid slds-grid_vertical-align-center">
           <div className="slds-m-right_small">
-            <Dropdown
-              align="right"
+            <SimpleDropdown
               options={filterOptions}
               onSelect={(option) => {
                 setFilter(option.id === "all" ? null : option.id);
