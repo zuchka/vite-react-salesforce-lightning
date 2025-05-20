@@ -9,7 +9,18 @@ import {
   DataTableColumn,
   DataTableCell,
 } from "@salesforce/design-system-react";
-import { Statistics, Tables } from "../../types/database";
+import { Tables } from "../../types/database";
+
+// Define the Statistics type locally to avoid import issues
+interface Statistics {
+  totalUsers: number;
+  activeSubscriptions: number;
+  totalVideos: number;
+  totalViews: number;
+  recentSignups: number;
+  totalRevenue: number;
+  averageWatchTime: number;
+}
 
 const StatisticsPanel: React.FC = () => {
   const [stats, setStats] = useState<Statistics | null>(null);
