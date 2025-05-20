@@ -15,6 +15,7 @@ import {
   fetchTableNames,
   getTableInfo,
   fetchData,
+  KNOWN_TABLES,
 } from "../../services/supabase";
 
 interface Column {
@@ -39,17 +40,12 @@ const DatabaseExplorer: React.FC = () => {
   const loadTables = async () => {
     try {
       setLoading(true);
-      const { tables, error } = await fetchTableNames();
-
-      if (error) {
-        throw new Error("Failed to fetch database tables");
-      }
-
-      setTables(tables);
+      // Use our predefined list to avoid permissions issues
+      setTables(KNOWN_TABLES);
 
       // If tables were found, select the first one
-      if (tables.length > 0) {
-        setSelectedTable(tables[0]);
+      if (KNOWN_TABLES.length > 0) {
+        setSelectedTable(KNOWN_TABLES[0]);
       }
     } catch (err) {
       console.error("Error loading database tables:", err);
@@ -82,11 +78,15 @@ const DatabaseExplorer: React.FC = () => {
   const loadTableData = async (tableName: string, currentPage: number) => {
     try {
       setLoading(true);
-      const { data, error, count, hasMore } = await fetchData(
+      const { data, error, count, hasMore, tableExists } = await fetchData(
         tableName,
         currentPage,
         pageSize,
       );
+
+      if (!tableExists) {
+        throw new Error(`Table does not exist or no access: ${tableName}`);
+      }
 
       if (error) {
         throw new Error(`Failed to fetch data from table ${tableName}`);
@@ -269,47 +269,56 @@ const DatabaseExplorer: React.FC = () => {
                           </div>
                         ) : (
                           <>
-                            <DataTable
-                              items={tableData}
-                              columns={getColumnsForTable()}
-                              id="table-data"
-                              noRowHover={false}
-                              className="slds-table_striped"
-                              fixedLayout
-                            />
+                            {tableData.length > 0 ? (
+                              <>
+                                <DataTable
+                                  items={tableData}
+                                  columns={getColumnsForTable()}
+                                  id="table-data"
+                                  noRowHover={false}
+                                  className="slds-table_striped"
+                                  fixedLayout
+                                />
 
-                            <div className="slds-grid slds-grid_align-spread slds-m-top_medium">
-                              <div>
-                                <p className="slds-text-color_weak">
-                                  Showing{" "}
-                                  {tableData.length > 0
-                                    ? (page - 1) * pageSize + 1
-                                    : 0}{" "}
-                                  to {(page - 1) * pageSize + tableData.length}{" "}
-                                  of {totalCount} records
-                                </p>
+                                <div className="slds-grid slds-grid_align-spread slds-m-top_medium">
+                                  <div>
+                                    <p className="slds-text-color_weak">
+                                      Showing{" "}
+                                      {tableData.length > 0
+                                        ? (page - 1) * pageSize + 1
+                                        : 0}{" "}
+                                      to{" "}
+                                      {(page - 1) * pageSize + tableData.length}{" "}
+                                      of {totalCount} records
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <ButtonGroup>
+                                      <Button
+                                        label="Previous"
+                                        onClick={handlePrevious}
+                                        disabled={page <= 1}
+                                        iconCategory="utility"
+                                        iconName="chevronleft"
+                                        iconPosition="left"
+                                      />
+                                      <Button
+                                        label="Next"
+                                        onClick={handleNext}
+                                        disabled={!hasMore}
+                                        iconCategory="utility"
+                                        iconName="chevronright"
+                                        iconPosition="right"
+                                      />
+                                    </ButtonGroup>
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="slds-text-align_center slds-p-around_medium slds-text-color_weak">
+                                No data available or no access to this table.
                               </div>
-                              <div>
-                                <ButtonGroup>
-                                  <Button
-                                    label="Previous"
-                                    onClick={handlePrevious}
-                                    disabled={page <= 1}
-                                    iconCategory="utility"
-                                    iconName="chevronleft"
-                                    iconPosition="left"
-                                  />
-                                  <Button
-                                    label="Next"
-                                    onClick={handleNext}
-                                    disabled={!hasMore}
-                                    iconCategory="utility"
-                                    iconName="chevronright"
-                                    iconPosition="right"
-                                  />
-                                </ButtonGroup>
-                              </div>
-                            </div>
+                            )}
                           </>
                         )}
                       </>
@@ -334,6 +343,21 @@ const DatabaseExplorer: React.FC = () => {
                       Custom SQL Query
                     </h2>
 
+                    <div className="slds-box slds-theme_info slds-m-bottom_medium">
+                      <div className="slds-media">
+                        <div className="slds-media__figure">
+                          <Icon category="utility" name="info" size="small" />
+                        </div>
+                        <div className="slds-media__body">
+                          <p>
+                            Note: SQL query execution may be limited due to
+                            database permissions. This is a read-only
+                            environment for safety purposes.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="slds-form-element slds-m-bottom_large">
                       <label
                         className="slds-form-element__label"
@@ -345,7 +369,7 @@ const DatabaseExplorer: React.FC = () => {
                         <textarea
                           id="sql-query-input"
                           className="slds-textarea"
-                          placeholder="SELECT * FROM users LIMIT 25;"
+                          placeholder="SELECT * FROM film LIMIT 25;"
                           rows={5}
                           value={sqlQuery}
                           onChange={(e) => setSqlQuery(e.target.value)}
@@ -397,50 +421,59 @@ const DatabaseExplorer: React.FC = () => {
                             />
                           </div>
                         ) : (
-                          <table className="slds-table slds-table_cell-buffer slds-table_bordered">
-                            <thead>
-                              <tr className="slds-line-height_reset">
-                                <th scope="col">
-                                  <div
-                                    className="slds-truncate"
-                                    title="Column Name"
-                                  >
-                                    Column Name
-                                  </div>
-                                </th>
-                                <th scope="col">
-                                  <div
-                                    className="slds-truncate"
-                                    title="Data Type"
-                                  >
-                                    Data Type
-                                  </div>
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {tableColumns.map((column) => (
-                                <tr key={column.column_name}>
-                                  <td>
-                                    <div
-                                      className="slds-truncate"
-                                      title={column.column_name}
-                                    >
-                                      {column.column_name}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div
-                                      className="slds-truncate"
-                                      title={column.data_type}
-                                    >
-                                      {column.data_type}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <>
+                            {tableColumns.length > 0 ? (
+                              <table className="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead>
+                                  <tr className="slds-line-height_reset">
+                                    <th scope="col">
+                                      <div
+                                        className="slds-truncate"
+                                        title="Column Name"
+                                      >
+                                        Column Name
+                                      </div>
+                                    </th>
+                                    <th scope="col">
+                                      <div
+                                        className="slds-truncate"
+                                        title="Data Type"
+                                      >
+                                        Data Type
+                                      </div>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tableColumns.map((column) => (
+                                    <tr key={column.column_name}>
+                                      <td>
+                                        <div
+                                          className="slds-truncate"
+                                          title={column.column_name}
+                                        >
+                                          {column.column_name}
+                                        </div>
+                                      </td>
+                                      <td>
+                                        <div
+                                          className="slds-truncate"
+                                          title={column.data_type}
+                                        >
+                                          {column.data_type}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <div className="slds-text-align_center slds-p-around_medium slds-text-color_weak">
+                                No columns found or no access to this table's
+                                structure.
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     ) : (

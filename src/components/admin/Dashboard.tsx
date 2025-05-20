@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Icon, Spinner, Button } from "@salesforce/design-system-react";
-import {
-  fetchStats,
-  fetchTableNames,
-  type Film,
-} from "../../services/supabase";
+import { fetchStats, type Film, KNOWN_TABLES } from "../../services/supabase";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{
@@ -44,21 +40,11 @@ const Dashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allTables, setAllTables] = useState<string[]>([]);
 
   useEffect(() => {
     const getStats = async () => {
       try {
         setLoading(true);
-
-        // Fetch all tables in the database to see what's available
-        const { tables, error: tablesError } = await fetchTableNames();
-        if (tablesError) {
-          console.error("Error fetching tables:", tablesError);
-        } else {
-          setAllTables(tables);
-        }
-
         const result = await fetchStats();
         setStats(result);
       } catch (err) {
@@ -112,6 +98,60 @@ const Dashboard: React.FC = () => {
       <h1 className="slds-text-heading_large slds-m-bottom_large">
         DVD Rental Dashboard
       </h1>
+
+      <Card className="admin-box slds-m-bottom_large">
+        <div className="slds-p-around_medium">
+          <h2 className="slds-text-heading_medium slds-m-bottom_medium">
+            Available Database Tables
+          </h2>
+          <p className="slds-m-bottom_medium">
+            This dashboard connects to a PostgreSQL sample DVD rental database
+            with {KNOWN_TABLES.length} tables.
+          </p>
+
+          <div className="slds-grid slds-gutters slds-wrap">
+            {KNOWN_TABLES.map((table) => (
+              <div
+                key={table}
+                className="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-4 slds-p-around_x-small"
+              >
+                <div
+                  className="slds-box"
+                  style={{
+                    backgroundColor: "#23243a",
+                    borderColor: "#3a3b4d",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("changeAdminTab", {
+                        detail: {
+                          tab: "explore",
+                          selectedTable: table,
+                        },
+                      }),
+                    );
+                  }}
+                >
+                  <div className="slds-grid slds-grid_vertical-align-center">
+                    <div className="slds-col slds-size_1-of-12">
+                      <Icon category="standard" name="table" size="small" />
+                    </div>
+                    <div className="slds-col slds-size_11-of-12">
+                      <p
+                        className="slds-text-heading_small"
+                        style={{ color: "#b18cff" }}
+                      >
+                        {table}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
 
       {/* Key Metrics */}
       <div className="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
@@ -293,7 +333,7 @@ const Dashboard: React.FC = () => {
             </table>
           ) : (
             <div className="slds-text-align_center slds-p-around_medium slds-text-color_weak">
-              No films found.
+              No films found or no access to film table.
             </div>
           )}
         </div>
