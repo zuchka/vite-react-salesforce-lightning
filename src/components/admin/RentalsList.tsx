@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from "react";
 import {
   DataTable,
-  DataTableColumn,
+  DataTableColumn as Column,
   DataTableCell,
   Card,
   Icon,
   Input,
-  ButtonGroup,
   Button,
   Pill,
 } from "@salesforce/design-system-react";
-import SimpleDropdown from "./SimpleDropdown";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
+import SimpleDropdown from "./SimpleDropdown";
 
 interface Rental {
   rental_id: number;
@@ -70,7 +69,7 @@ const RentalsList: React.FC = () => {
       const { data: rentalData, error: rentalError } = await rentalQuery;
 
       if (rentalError) {
-        console.error("Error fetching rentals:", rentalError);
+        console.error("Error fetching rentals:", rentalError.message);
         return;
       }
 
@@ -88,7 +87,7 @@ const RentalsList: React.FC = () => {
       const { count, error: countError } = await countQuery;
 
       if (countError) {
-        console.error("Error fetching count:", countError);
+        console.error("Error fetching count:", countError.message);
         return;
       }
 
@@ -97,12 +96,12 @@ const RentalsList: React.FC = () => {
         // Get customer names
         const customerIds = rentalData.map((rental) => rental.customer_id);
         const { data: customerData, error: customerError } = await supabase
-          .from("customer_list")
-          .select("id, name")
-          .in("id", customerIds);
+          .from("customer")
+          .select("customer_id, first_name, last_name")
+          .in("customer_id", customerIds);
 
         if (customerError) {
-          console.error("Error fetching customer data:", customerError);
+          console.error("Error fetching customer data:", customerError.message);
         }
 
         // Get film titles
@@ -113,7 +112,10 @@ const RentalsList: React.FC = () => {
           .in("inventory_id", inventoryIds);
 
         if (inventoryError) {
-          console.error("Error fetching inventory data:", inventoryError);
+          console.error(
+            "Error fetching inventory data:",
+            inventoryError.message,
+          );
         }
 
         if (inventoryData && inventoryData.length > 0) {
@@ -124,14 +126,14 @@ const RentalsList: React.FC = () => {
             .in("film_id", filmIds);
 
           if (filmError) {
-            console.error("Error fetching film data:", filmError);
+            console.error("Error fetching film data:", filmError.message);
           }
 
           // Now we can combine all this data
           const enrichedRentals = rentalData.map((rental) => {
             // Find matching customer
             const customer = customerData?.find(
-              (c) => c.id === rental.customer_id,
+              (c) => c.customer_id === rental.customer_id,
             );
             // Find matching inventory and film
             const inventory = inventoryData?.find(
@@ -143,13 +145,25 @@ const RentalsList: React.FC = () => {
 
             return {
               ...rental,
-              customer_name: customer?.name || "Unknown Customer",
+              customer_name: customer
+                ? `${customer.first_name} ${customer.last_name}`
+                : "Unknown Customer",
               film_title: film?.title || "Unknown Film",
               rental_status: rental.return_date ? "Returned" : "Outstanding",
             };
           });
 
           setRentals(enrichedRentals);
+        } else {
+          // If no inventory data, just show basic rental info
+          setRentals(
+            rentalData.map((rental) => ({
+              ...rental,
+              customer_name: "Unknown Customer",
+              film_title: "Unknown Film",
+              rental_status: rental.return_date ? "Returned" : "Outstanding",
+            })),
+          );
         }
       } else {
         setRentals([]);
@@ -168,18 +182,18 @@ const RentalsList: React.FC = () => {
       setIsLoading(true);
       // Search by customer name
       supabase
-        .from("customer_list")
-        .select("id")
-        .ilike("name", `%${searchTerm}%`)
+        .from("customer")
+        .select("customer_id, first_name, last_name")
+        .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
         .then(({ data: customerData, error }) => {
           if (error) {
-            console.error("Error searching customers:", error);
+            console.error("Error searching customers:", error.message);
             setIsLoading(false);
             return;
           }
 
           if (customerData && customerData.length > 0) {
-            const customerIds = customerData.map((c) => c.id);
+            const customerIds = customerData.map((c) => c.customer_id);
 
             // Get rentals for these customers
             let rentalQuery = supabase
@@ -200,7 +214,10 @@ const RentalsList: React.FC = () => {
 
             rentalQuery.then(({ data, error: rentalError }) => {
               if (rentalError) {
-                console.error("Error fetching filtered rentals:", rentalError);
+                console.error(
+                  "Error fetching filtered rentals:",
+                  rentalError.message,
+                );
                 setIsLoading(false);
                 return;
               }
@@ -219,7 +236,10 @@ const RentalsList: React.FC = () => {
 
               countQuery.then(({ count, error: countError }) => {
                 if (countError) {
-                  console.error("Error fetching count for search:", countError);
+                  console.error(
+                    "Error fetching count for search:",
+                    countError.message,
+                  );
                 }
 
                 // Re-use the same enrichment logic to get customer names and film titles
@@ -252,9 +272,9 @@ const RentalsList: React.FC = () => {
       // Get customer names
       const customerIds = rentalData.map((rental) => rental.customer_id);
       const { data: customerData } = await supabase
-        .from("customer_list")
-        .select("id, name")
-        .in("id", customerIds);
+        .from("customer")
+        .select("customer_id, first_name, last_name")
+        .in("customer_id", customerIds);
 
       // Get film titles
       const inventoryIds = rentalData.map((rental) => rental.inventory_id);
@@ -276,7 +296,9 @@ const RentalsList: React.FC = () => {
 
       // Combine all data
       return rentalData.map((rental) => {
-        const customer = customerData?.find((c) => c.id === rental.customer_id);
+        const customer = customerData?.find(
+          (c) => c.customer_id === rental.customer_id,
+        );
         const inventory = inventoryData?.find(
           (i) => i.inventory_id === rental.inventory_id,
         );
@@ -286,7 +308,9 @@ const RentalsList: React.FC = () => {
 
         return {
           ...rental,
-          customer_name: customer?.name || "Unknown Customer",
+          customer_name: customer
+            ? `${customer.first_name} ${customer.last_name}`
+            : "Unknown Customer",
           film_title: film?.title || "Unknown Film",
           rental_status: rental.return_date ? "Returned" : "Outstanding",
         };
@@ -313,67 +337,6 @@ const RentalsList: React.FC = () => {
       minute: "2-digit",
     });
   };
-
-  const columns: DataTableColumn[] = [
-    {
-      label: "Rental ID",
-      property: "rental_id",
-      sortable: true,
-    },
-    {
-      label: "Customer",
-      property: "customer_name",
-      sortable: true,
-    },
-    {
-      label: "Film",
-      property: "film_title",
-      sortable: true,
-    },
-    {
-      label: "Rental Date",
-      property: "rental_date",
-      sortable: true,
-      cell: (item: Rental) => (
-        <DataTableCell>{formatDate(item.rental_date)}</DataTableCell>
-      ),
-    },
-    {
-      label: "Return Date",
-      property: "return_date",
-      sortable: true,
-      cell: (item: Rental) => (
-        <DataTableCell>{formatDate(item.return_date)}</DataTableCell>
-      ),
-    },
-    {
-      label: "Status",
-      property: "rental_status",
-      sortable: true,
-      cell: (item: Rental) => (
-        <DataTableCell>
-          <Pill
-            labels={{
-              label: item.rental_status || "Unknown",
-              removeTitle: "Remove",
-            }}
-            icon={
-              <Icon
-                category="standard"
-                name={
-                  item.rental_status === "Returned"
-                    ? "checkout"
-                    : "connected_apps"
-                }
-                size="small"
-              />
-            }
-            variant={item.rental_status === "Returned" ? "success" : "warning"}
-          />
-        </DataTableCell>
-      ),
-    },
-  ];
 
   const filterOptions = [
     { id: "all", label: "All Rentals" },
@@ -437,7 +400,6 @@ const RentalsList: React.FC = () => {
         ) : (
           <DataTable
             items={rentals}
-            columns={columns}
             noRowHover={false}
             striped
             fixedLayout
@@ -445,7 +407,47 @@ const RentalsList: React.FC = () => {
             className="slds-max-medium-table_stacked-horizontal"
             selectRows="none"
             emptyCellContent="—"
-          />
+          >
+            <Column label="Rental ID" property="rental_id" sortable />
+            <Column label="Customer" property="customer_name" sortable />
+            <Column label="Film" property="film_title" sortable />
+            <Column label="Rental Date" property="rental_date" sortable>
+              {(item: Rental) => (
+                <DataTableCell>{formatDate(item.rental_date)}</DataTableCell>
+              )}
+            </Column>
+            <Column label="Return Date" property="return_date" sortable>
+              {(item: Rental) => (
+                <DataTableCell>{formatDate(item.return_date)}</DataTableCell>
+              )}
+            </Column>
+            <Column label="Status" property="rental_status" sortable>
+              {(item: Rental) => (
+                <DataTableCell>
+                  <Pill
+                    labels={{
+                      label: item.rental_status || "Unknown",
+                      removeTitle: "Remove",
+                    }}
+                    icon={
+                      <Icon
+                        category="standard"
+                        name={
+                          item.rental_status === "Returned"
+                            ? "checkout"
+                            : "connected_apps"
+                        }
+                        size="small"
+                      />
+                    }
+                    variant={
+                      item.rental_status === "Returned" ? "success" : "warning"
+                    }
+                  />
+                </DataTableCell>
+              )}
+            </Column>
+          </DataTable>
         )}
       </div>
     </Card>

@@ -3,7 +3,7 @@ import {
   Card,
   Icon,
   DataTable,
-  DataTableColumn,
+  DataTableColumn as Column,
   DataTableCell,
 } from "@salesforce/design-system-react";
 import { supabase } from "../../lib/supabaseClient";
@@ -32,7 +32,7 @@ const SalesByCategoryList: React.FC = () => {
         .order("total_sales", { ascending: false });
 
       if (error) {
-        console.error("Error fetching sales by category:", error);
+        console.error("Error fetching sales by category:", error.message);
         return;
       }
 
@@ -54,57 +54,6 @@ const SalesByCategoryList: React.FC = () => {
     }
   };
 
-  const columns: DataTableColumn[] = [
-    {
-      label: "Category",
-      property: "category",
-      sortable: true,
-    },
-    {
-      label: "Total Sales",
-      property: "total_sales",
-      sortable: true,
-      cell: (item: SalesByCategory) => (
-        <DataTableCell>${Number(item.total_sales).toFixed(2)}</DataTableCell>
-      ),
-    },
-    {
-      label: "Percentage",
-      property: "percentage",
-      sortable: true,
-      cell: (item: SalesByCategory) => (
-        <DataTableCell>
-          <div className="slds-grid slds-grid_vertical-align-center">
-            <div className="slds-m-right_small">
-              {item.percentage?.toFixed(2)}%
-            </div>
-            <div className="slds-grid" style={{ width: "100px" }}>
-              <div
-                className="slds-progress-bar"
-                style={{
-                  width: "100%",
-                  backgroundColor: "#23243a",
-                  height: "10px",
-                  borderRadius: "5px",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  className="slds-progress-bar__value"
-                  style={{
-                    width: `${item.percentage}%`,
-                    backgroundColor: "#a259ff",
-                    height: "100%",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </DataTableCell>
-      ),
-    },
-  ];
-
   return (
     <Card
       heading="Sales by Category"
@@ -117,7 +66,6 @@ const SalesByCategoryList: React.FC = () => {
         <div className="slds-p-horizontal_small">
           <DataTable
             items={salesData}
-            columns={columns}
             noRowHover={false}
             striped
             fixedLayout
@@ -125,7 +73,48 @@ const SalesByCategoryList: React.FC = () => {
             className="slds-max-medium-table_stacked-horizontal"
             selectRows="none"
             emptyCellContent="—"
-          />
+          >
+            <Column label="Category" property="category" sortable />
+            <Column label="Total Sales" property="total_sales" sortable>
+              {(item: SalesByCategory) => (
+                <DataTableCell>
+                  ${Number(item.total_sales).toFixed(2)}
+                </DataTableCell>
+              )}
+            </Column>
+            <Column label="Percentage" property="percentage" sortable>
+              {(item: SalesByCategory) => (
+                <DataTableCell>
+                  <div className="slds-grid slds-grid_vertical-align-center">
+                    <div className="slds-m-right_small">
+                      {item.percentage?.toFixed(2)}%
+                    </div>
+                    <div className="slds-grid" style={{ width: "100px" }}>
+                      <div
+                        className="slds-progress-bar"
+                        style={{
+                          width: "100%",
+                          backgroundColor: "#23243a",
+                          height: "10px",
+                          borderRadius: "5px",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          className="slds-progress-bar__value"
+                          style={{
+                            width: `${item.percentage}%`,
+                            backgroundColor: "#a259ff",
+                            height: "100%",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </DataTableCell>
+              )}
+            </Column>
+          </DataTable>
         </div>
       )}
     </Card>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   DataTable,
-  DataTableColumn,
+  DataTableColumn as Column,
   DataTableCell,
   Card,
   Icon,
@@ -57,7 +57,7 @@ const CustomersList: React.FC = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching customers:", error);
+        console.error("Error fetching customers:", error.message);
         return;
       }
 
@@ -75,7 +75,7 @@ const CustomersList: React.FC = () => {
       const { count, error: countError } = await countQuery;
 
       if (countError) {
-        console.error("Error fetching count:", countError);
+        console.error("Error fetching count:", countError.message);
         return;
       }
 
@@ -98,56 +98,6 @@ const CustomersList: React.FC = () => {
       handleSearch();
     }
   };
-
-  const columns: DataTableColumn[] = [
-    {
-      label: "Name",
-      property: "name",
-      sortable: true,
-      width: "15rem",
-    },
-    {
-      label: "Address",
-      property: "address",
-      sortable: true,
-      width: "20rem",
-      cell: (item: Customer) => (
-        <DataTableCell>
-          <div>{item.address}</div>
-          <div className="slds-text-body_small">{item["zip code"]}</div>
-        </DataTableCell>
-      ),
-    },
-    {
-      label: "City",
-      property: "city",
-      sortable: true,
-    },
-    {
-      label: "Country",
-      property: "country",
-      sortable: true,
-    },
-    {
-      label: "Phone",
-      property: "phone",
-      sortable: true,
-    },
-    {
-      label: "Status",
-      property: "notes",
-      sortable: false,
-      cell: (item: Customer) => (
-        <DataTableCell>
-          {item.notes && item.notes.includes("active") ? (
-            <Badge content="Active" color="success" />
-          ) : (
-            <Badge content="Inactive" color="warning" />
-          )}
-        </DataTableCell>
-      ),
-    },
-  ];
 
   return (
     <Card
@@ -189,7 +139,6 @@ const CustomersList: React.FC = () => {
         ) : (
           <DataTable
             items={customers}
-            columns={columns}
             noRowHover={false}
             striped
             fixedLayout
@@ -197,7 +146,31 @@ const CustomersList: React.FC = () => {
             className="slds-max-medium-table_stacked-horizontal"
             selectRows="none"
             emptyCellContent="—"
-          />
+          >
+            <Column label="Name" property="name" sortable width="15rem" />
+            <Column label="Address" property="address" sortable width="20rem">
+              {(item: Customer) => (
+                <DataTableCell>
+                  <div>{item.address}</div>
+                  <div className="slds-text-body_small">{item["zip code"]}</div>
+                </DataTableCell>
+              )}
+            </Column>
+            <Column label="City" property="city" sortable />
+            <Column label="Country" property="country" sortable />
+            <Column label="Phone" property="phone" sortable />
+            <Column label="Status" property="notes" sortable={false}>
+              {(item: Customer) => (
+                <DataTableCell>
+                  {item.notes && item.notes.includes("active") ? (
+                    <Badge content="Active" color="success" />
+                  ) : (
+                    <Badge content="Inactive" color="warning" />
+                  )}
+                </DataTableCell>
+              )}
+            </Column>
+          </DataTable>
         )}
       </div>
     </Card>

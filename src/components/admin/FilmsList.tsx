@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
 import {
   DataTable,
-  DataTableColumn,
+  DataTableColumn as Column,
   DataTableCell,
   Card,
   Icon,
   Input,
-  ButtonGroup,
   Button,
   Pill,
 } from "@salesforce/design-system-react";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
+import SimpleDropdown from "./SimpleDropdown";
 
 interface Film {
   film_id: number;
@@ -85,7 +85,7 @@ const FilmsList: React.FC = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error("Error fetching films:", error);
+        console.error("Error fetching films:", error.message);
         return;
       }
 
@@ -105,7 +105,7 @@ const FilmsList: React.FC = () => {
       const { count, error: countError } = await countQuery;
 
       if (countError) {
-        console.error("Error fetching count:", countError);
+        console.error("Error fetching count:", countError.message);
         return;
       }
 
@@ -145,57 +145,6 @@ const FilmsList: React.FC = () => {
     setSelectedCategory(category);
     setCurrentPage(1);
   };
-
-  const columns: DataTableColumn[] = [
-    {
-      label: "Title",
-      property: "title",
-      sortable: true,
-    },
-    {
-      label: "Description",
-      property: "description",
-      sortable: false,
-      cell: (item: Film) => (
-        <DataTableCell>
-          <div className="slds-line-clamp_small">{item.description}</div>
-        </DataTableCell>
-      ),
-    },
-    {
-      label: "Category",
-      property: "category",
-      sortable: true,
-    },
-    {
-      label: "Length",
-      property: "length",
-      sortable: true,
-      cell: (item: Film) => <DataTableCell>{item.length} min</DataTableCell>,
-    },
-    {
-      label: "Price",
-      property: "rental_rate",
-      sortable: true,
-      cell: (item: Film) => <DataTableCell>${item.rental_rate}</DataTableCell>,
-    },
-    {
-      label: "Rating",
-      property: "rating",
-      sortable: true,
-      cell: (item: Film) => (
-        <DataTableCell>
-          <Pill
-            labels={{
-              label: item.rating,
-              removeTitle: "Remove",
-            }}
-            icon={<Icon category="standard" name="product_required" />}
-          />
-        </DataTableCell>
-      ),
-    },
-  ];
 
   return (
     <Card
@@ -255,7 +204,6 @@ const FilmsList: React.FC = () => {
         ) : (
           <DataTable
             items={films}
-            columns={columns}
             noRowHover={false}
             striped
             fixedLayout
@@ -263,7 +211,40 @@ const FilmsList: React.FC = () => {
             className="slds-max-medium-table_stacked-horizontal"
             selectRows="none"
             emptyCellContent="—"
-          />
+          >
+            <Column label="Title" property="title" sortable />
+            <Column label="Description" property="description" sortable={false}>
+              {(item: Film) => (
+                <DataTableCell>
+                  <div className="slds-line-clamp_small">
+                    {item.description}
+                  </div>
+                </DataTableCell>
+              )}
+            </Column>
+            <Column label="Category" property="category" sortable />
+            <Column label="Length" property="length" sortable>
+              {(item: Film) => <DataTableCell>{item.length} min</DataTableCell>}
+            </Column>
+            <Column label="Price" property="rental_rate" sortable>
+              {(item: Film) => (
+                <DataTableCell>${item.rental_rate}</DataTableCell>
+              )}
+            </Column>
+            <Column label="Rating" property="rating" sortable>
+              {(item: Film) => (
+                <DataTableCell>
+                  <Pill
+                    labels={{
+                      label: item.rating,
+                      removeTitle: "Remove",
+                    }}
+                    icon={<Icon category="standard" name="product_required" />}
+                  />
+                </DataTableCell>
+              )}
+            </Column>
+          </DataTable>
         )}
       </div>
     </Card>
