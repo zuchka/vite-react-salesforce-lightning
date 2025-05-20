@@ -24,23 +24,28 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onSelect }) => {
   return (
     <div className="admin-sidebar">
       <div className="slds-p-around_medium">
-        <h2 className="slds-text-heading_small slds-p-bottom_medium">
+        <h2
+          className="slds-text-heading_small slds-p-bottom_medium"
+          style={{ color: "#f4f4f6" }}
+        >
           <Icon
             category="standard"
             name="record"
             size="small"
             className="slds-m-right_x-small"
+            style={{ fill: "#b18cff" }}
           />
           Sakila DVD Store
         </h2>
       </div>
       <VerticalNavigation
         id="admin-navigation"
-        className="slds-m-top_medium"
+        className="slds-m-top_medium admin-nav"
         selectedId={activeItem}
         onSelect={(event, { item }) => {
           onSelect(item.id);
         }}
+        style={{ color: "#f4f4f6" }}
         categories={[
           {
             id: "admin-menu",

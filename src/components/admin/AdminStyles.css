@@ -13,6 +13,37 @@
   padding-top: 1rem;
 }
 
+/* Fix text color in vertical navigation */
+.admin-sidebar .slds-nav-vertical__action {
+  color: #f4f4f6 !important;
+}
+
+.admin-sidebar
+  .slds-nav-vertical__item.slds-is-active
+  .slds-nav-vertical__action {
+  color: #ffffff !important;
+  font-weight: bold;
+  background-color: #23243a !important;
+}
+
+.admin-sidebar .slds-nav-vertical__action:hover,
+.admin-sidebar .slds-nav-vertical__action:focus {
+  background-color: #23243a !important;
+  color: #b18cff !important;
+}
+
+/* Ensure the text in nav items is visible */
+.admin-sidebar .slds-nav-vertical__item a {
+  color: #f4f4f6 !important;
+}
+
+/* Fix text color in headings */
+.admin-sidebar h2,
+.admin-sidebar h3,
+.admin-sidebar span {
+  color: #f4f4f6 !important;
+}
+
 .admin-main {
   flex: 1;
   overflow-y: auto;
