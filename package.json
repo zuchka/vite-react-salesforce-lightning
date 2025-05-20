@@ -13,6 +13,7 @@
     "@lightningjs/ui-components": "^2.25.1",
     "@salesforce-ux/design-system": "^2.25.0-alpha.2",
     "@salesforce/design-system-react": "^0.10.63",
+    "@supabase/supabase-js": "^2.49.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"
