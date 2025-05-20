@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from "react";
 import {
-  DataTable,
-  DataTableColumn as Column,
-  DataTableCell,
   Card,
   Icon,
   Input,
   Button,
   Pill,
 } from "@salesforce/design-system-react";
+import { SimpleDataTable, Column } from "./SimpleDataTable";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
-import SimpleDropdown from "./SimpleDropdown";
 
 interface Film {
   film_id: number;
@@ -51,7 +48,7 @@ const FilmsList: React.FC = () => {
         .order("name");
 
       if (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching categories:", error.message);
         return;
       }
 
@@ -202,49 +199,39 @@ const FilmsList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <DataTable
+          <SimpleDataTable
             items={films}
-            noRowHover={false}
             striped
             fixedLayout
             id="films-datatable"
             className="slds-max-medium-table_stacked-horizontal"
-            selectRows="none"
             emptyCellContent="—"
           >
             <Column label="Title" property="title" sortable />
             <Column label="Description" property="description" sortable={false}>
               {(item: Film) => (
-                <DataTableCell>
-                  <div className="slds-line-clamp_small">
-                    {item.description}
-                  </div>
-                </DataTableCell>
+                <div className="slds-line-clamp_small">{item.description}</div>
               )}
             </Column>
             <Column label="Category" property="category" sortable />
             <Column label="Length" property="length" sortable>
-              {(item: Film) => <DataTableCell>{item.length} min</DataTableCell>}
+              {(item: Film) => <div>{item.length} min</div>}
             </Column>
             <Column label="Price" property="rental_rate" sortable>
-              {(item: Film) => (
-                <DataTableCell>${item.rental_rate}</DataTableCell>
-              )}
+              {(item: Film) => <div>${item.rental_rate}</div>}
             </Column>
             <Column label="Rating" property="rating" sortable>
               {(item: Film) => (
-                <DataTableCell>
-                  <Pill
-                    labels={{
-                      label: item.rating,
-                      removeTitle: "Remove",
-                    }}
-                    icon={<Icon category="standard" name="product_required" />}
-                  />
-                </DataTableCell>
+                <Pill
+                  labels={{
+                    label: item.rating,
+                    removeTitle: "Remove",
+                  }}
+                  icon={<Icon category="standard" name="product_required" />}
+                />
               )}
             </Column>
-          </DataTable>
+          </SimpleDataTable>
         )}
       </div>
     </Card>

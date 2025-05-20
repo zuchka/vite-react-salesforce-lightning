@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
-  DataTable,
-  DataTableColumn as Column,
-  DataTableCell,
   Card,
   Icon,
   Input,
   Button,
   Pill,
 } from "@salesforce/design-system-react";
+import { SimpleDataTable, Column } from "./SimpleDataTable";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
@@ -398,56 +396,48 @@ const RentalsList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <DataTable
+          <SimpleDataTable
             items={rentals}
-            noRowHover={false}
             striped
             fixedLayout
             id="rentals-datatable"
             className="slds-max-medium-table_stacked-horizontal"
-            selectRows="none"
             emptyCellContent="—"
           >
             <Column label="Rental ID" property="rental_id" sortable />
             <Column label="Customer" property="customer_name" sortable />
             <Column label="Film" property="film_title" sortable />
             <Column label="Rental Date" property="rental_date" sortable>
-              {(item: Rental) => (
-                <DataTableCell>{formatDate(item.rental_date)}</DataTableCell>
-              )}
+              {(item: Rental) => <div>{formatDate(item.rental_date)}</div>}
             </Column>
             <Column label="Return Date" property="return_date" sortable>
-              {(item: Rental) => (
-                <DataTableCell>{formatDate(item.return_date)}</DataTableCell>
-              )}
+              {(item: Rental) => <div>{formatDate(item.return_date)}</div>}
             </Column>
             <Column label="Status" property="rental_status" sortable>
               {(item: Rental) => (
-                <DataTableCell>
-                  <Pill
-                    labels={{
-                      label: item.rental_status || "Unknown",
-                      removeTitle: "Remove",
-                    }}
-                    icon={
-                      <Icon
-                        category="standard"
-                        name={
-                          item.rental_status === "Returned"
-                            ? "checkout"
-                            : "connected_apps"
-                        }
-                        size="small"
-                      />
-                    }
-                    variant={
-                      item.rental_status === "Returned" ? "success" : "warning"
-                    }
-                  />
-                </DataTableCell>
+                <Pill
+                  labels={{
+                    label: item.rental_status || "Unknown",
+                    removeTitle: "Remove",
+                  }}
+                  icon={
+                    <Icon
+                      category="standard"
+                      name={
+                        item.rental_status === "Returned"
+                          ? "checkout"
+                          : "connected_apps"
+                      }
+                      size="small"
+                    />
+                  }
+                  variant={
+                    item.rental_status === "Returned" ? "success" : "warning"
+                  }
+                />
               )}
             </Column>
-          </DataTable>
+          </SimpleDataTable>
         )}
       </div>
     </Card>

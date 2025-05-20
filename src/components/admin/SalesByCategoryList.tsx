@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  Icon,
-  DataTable,
-  DataTableColumn as Column,
-  DataTableCell,
-} from "@salesforce/design-system-react";
+import { Card, Icon } from "@salesforce/design-system-react";
+import { SimpleDataTable, Column } from "./SimpleDataTable";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -64,57 +59,51 @@ const SalesByCategoryList: React.FC = () => {
         <LoadingSpinner />
       ) : (
         <div className="slds-p-horizontal_small">
-          <DataTable
+          <SimpleDataTable
             items={salesData}
-            noRowHover={false}
             striped
             fixedLayout
             id="sales-by-category-datatable"
             className="slds-max-medium-table_stacked-horizontal"
-            selectRows="none"
             emptyCellContent="—"
           >
             <Column label="Category" property="category" sortable />
             <Column label="Total Sales" property="total_sales" sortable>
               {(item: SalesByCategory) => (
-                <DataTableCell>
-                  ${Number(item.total_sales).toFixed(2)}
-                </DataTableCell>
+                <div>${Number(item.total_sales).toFixed(2)}</div>
               )}
             </Column>
             <Column label="Percentage" property="percentage" sortable>
               {(item: SalesByCategory) => (
-                <DataTableCell>
-                  <div className="slds-grid slds-grid_vertical-align-center">
-                    <div className="slds-m-right_small">
-                      {item.percentage?.toFixed(2)}%
-                    </div>
-                    <div className="slds-grid" style={{ width: "100px" }}>
+                <div className="slds-grid slds-grid_vertical-align-center">
+                  <div className="slds-m-right_small">
+                    {item.percentage?.toFixed(2)}%
+                  </div>
+                  <div className="slds-grid" style={{ width: "100px" }}>
+                    <div
+                      className="slds-progress-bar"
+                      style={{
+                        width: "100%",
+                        backgroundColor: "#23243a",
+                        height: "10px",
+                        borderRadius: "5px",
+                        overflow: "hidden",
+                      }}
+                    >
                       <div
-                        className="slds-progress-bar"
+                        className="slds-progress-bar__value"
                         style={{
-                          width: "100%",
-                          backgroundColor: "#23243a",
-                          height: "10px",
-                          borderRadius: "5px",
-                          overflow: "hidden",
+                          width: `${item.percentage}%`,
+                          backgroundColor: "#a259ff",
+                          height: "100%",
                         }}
-                      >
-                        <div
-                          className="slds-progress-bar__value"
-                          style={{
-                            width: `${item.percentage}%`,
-                            backgroundColor: "#a259ff",
-                            height: "100%",
-                          }}
-                        />
-                      </div>
+                      />
                     </div>
                   </div>
-                </DataTableCell>
+                </div>
               )}
             </Column>
-          </DataTable>
+          </SimpleDataTable>
         </div>
       )}
     </Card>

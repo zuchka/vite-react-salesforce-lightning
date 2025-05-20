@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
-  DataTable,
-  DataTableColumn as Column,
-  DataTableCell,
   Card,
   Icon,
   Input,
   Badge,
+  Button,
 } from "@salesforce/design-system-react";
+import { SimpleDataTable, Column } from "./SimpleDataTable";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
 import Pagination from "./Pagination";
@@ -114,12 +113,11 @@ const CustomersList: React.FC = () => {
             onKeyPress={handleKeyPress}
             iconLeft={<Icon category="utility" name="search" />}
           />
-          <button
+          <Button
             className="slds-button slds-button_brand slds-m-left_small"
             onClick={handleSearch}
-          >
-            Search
-          </button>
+            label="Search"
+          />
         </div>
       }
       footer={
@@ -137,23 +135,21 @@ const CustomersList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <DataTable
+          <SimpleDataTable
             items={customers}
-            noRowHover={false}
             striped
             fixedLayout
             id="customers-datatable"
             className="slds-max-medium-table_stacked-horizontal"
-            selectRows="none"
             emptyCellContent="—"
           >
             <Column label="Name" property="name" sortable width="15rem" />
             <Column label="Address" property="address" sortable width="20rem">
               {(item: Customer) => (
-                <DataTableCell>
+                <div>
                   <div>{item.address}</div>
                   <div className="slds-text-body_small">{item["zip code"]}</div>
-                </DataTableCell>
+                </div>
               )}
             </Column>
             <Column label="City" property="city" sortable />
@@ -161,16 +157,16 @@ const CustomersList: React.FC = () => {
             <Column label="Phone" property="phone" sortable />
             <Column label="Status" property="notes" sortable={false}>
               {(item: Customer) => (
-                <DataTableCell>
+                <div>
                   {item.notes && item.notes.includes("active") ? (
                     <Badge content="Active" color="success" />
                   ) : (
                     <Badge content="Inactive" color="warning" />
                   )}
-                </DataTableCell>
+                </div>
               )}
             </Column>
-          </DataTable>
+          </SimpleDataTable>
         )}
       </div>
     </Card>
