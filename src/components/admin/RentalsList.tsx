@@ -44,53 +44,33 @@ const RentalsList: React.FC = () => {
   const fetchRentals = async () => {
     setIsLoading(true);
     try {
-      // Build the query to get rental data with customer and film information
-      const rentalQuery = `
-        rental.rental_id,
-        rental.rental_date,
-        rental.inventory_id,
-        rental.customer_id,
-        rental.return_date,
-        rental.staff_id,
-        customer_list.name as customer_name,
-        film.title as film_title
-      `;
-
-      let query = supabase
+      // First get basic rental data with return date filtering if needed
+      let rentalQuery = supabase
         .from("rental")
-        .select(rentalQuery)
+        .select(
+          `
+          rental_id,
+          rental_date,
+          inventory_id,
+          customer_id,
+          return_date,
+          staff_id,
+          last_update
+        `,
+        )
         .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1)
-        .order("rental_date", { ascending: false })
-        .join("customer_list", {
-          foreignTable: "customer_list",
-          col1: "customer_id",
-          col2: "id",
-        })
-        .join("inventory", {
-          foreignTable: "inventory",
-          col1: "inventory_id",
-          col2: "inventory_id",
-        })
-        .join("film", {
-          foreignTable: "film",
-          col1: "inventory.film_id",
-          col2: "film_id",
-        });
+        .order("rental_date", { ascending: false });
 
       if (filter === "returned") {
-        query = query.not("return_date", "is", null);
+        rentalQuery = rentalQuery.not("return_date", "is", null);
       } else if (filter === "outstanding") {
-        query = query.is("return_date", null);
+        rentalQuery = rentalQuery.is("return_date", null);
       }
 
-      if (searchTerm) {
-        query = query.filter("customer_list.name", "ilike", `%${searchTerm}%`);
-      }
+      const { data: rentalData, error: rentalError } = await rentalQuery;
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching rentals:", error);
+      if (rentalError) {
+        console.error("Error fetching rentals:", rentalError);
         return;
       }
 
@@ -112,15 +92,69 @@ const RentalsList: React.FC = () => {
         return;
       }
 
-      // Process the data to include rental status
-      const processedData = data?.map((rental) => {
-        return {
-          ...rental,
-          rental_status: rental.return_date ? "Returned" : "Outstanding",
-        };
-      });
+      // If we have rental data, fetch the related customer and film information
+      if (rentalData && rentalData.length > 0) {
+        // Get customer names
+        const customerIds = rentalData.map((rental) => rental.customer_id);
+        const { data: customerData, error: customerError } = await supabase
+          .from("customer_list")
+          .select("id, name")
+          .in("id", customerIds);
 
-      setRentals(processedData || []);
+        if (customerError) {
+          console.error("Error fetching customer data:", customerError);
+        }
+
+        // Get film titles
+        const inventoryIds = rentalData.map((rental) => rental.inventory_id);
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from("inventory")
+          .select("inventory_id, film_id")
+          .in("inventory_id", inventoryIds);
+
+        if (inventoryError) {
+          console.error("Error fetching inventory data:", inventoryError);
+        }
+
+        if (inventoryData && inventoryData.length > 0) {
+          const filmIds = inventoryData.map((inv) => inv.film_id);
+          const { data: filmData, error: filmError } = await supabase
+            .from("film")
+            .select("film_id, title")
+            .in("film_id", filmIds);
+
+          if (filmError) {
+            console.error("Error fetching film data:", filmError);
+          }
+
+          // Now we can combine all this data
+          const enrichedRentals = rentalData.map((rental) => {
+            // Find matching customer
+            const customer = customerData?.find(
+              (c) => c.id === rental.customer_id,
+            );
+            // Find matching inventory and film
+            const inventory = inventoryData?.find(
+              (i) => i.inventory_id === rental.inventory_id,
+            );
+            const film = inventory
+              ? filmData?.find((f) => f.film_id === inventory.film_id)
+              : null;
+
+            return {
+              ...rental,
+              customer_name: customer?.name || "Unknown Customer",
+              film_title: film?.title || "Unknown Film",
+              rental_status: rental.return_date ? "Returned" : "Outstanding",
+            };
+          });
+
+          setRentals(enrichedRentals);
+        }
+      } else {
+        setRentals([]);
+      }
+
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
     } catch (error) {
       console.error("Error:", error);
@@ -130,8 +164,137 @@ const RentalsList: React.FC = () => {
   };
 
   const handleSearch = () => {
-    setCurrentPage(1);
-    fetchRentals();
+    if (searchTerm.trim()) {
+      setIsLoading(true);
+      // Search by customer name
+      supabase
+        .from("customer_list")
+        .select("id")
+        .ilike("name", `%${searchTerm}%`)
+        .then(({ data: customerData, error }) => {
+          if (error) {
+            console.error("Error searching customers:", error);
+            setIsLoading(false);
+            return;
+          }
+
+          if (customerData && customerData.length > 0) {
+            const customerIds = customerData.map((c) => c.id);
+
+            // Get rentals for these customers
+            let rentalQuery = supabase
+              .from("rental")
+              .select("*")
+              .in("customer_id", customerIds)
+              .range(
+                (currentPage - 1) * itemsPerPage,
+                currentPage * itemsPerPage - 1,
+              )
+              .order("rental_date", { ascending: false });
+
+            if (filter === "returned") {
+              rentalQuery = rentalQuery.not("return_date", "is", null);
+            } else if (filter === "outstanding") {
+              rentalQuery = rentalQuery.is("return_date", null);
+            }
+
+            rentalQuery.then(({ data, error: rentalError }) => {
+              if (rentalError) {
+                console.error("Error fetching filtered rentals:", rentalError);
+                setIsLoading(false);
+                return;
+              }
+
+              // Now count for pagination
+              let countQuery = supabase
+                .from("rental")
+                .select("rental_id", { count: "exact", head: true })
+                .in("customer_id", customerIds);
+
+              if (filter === "returned") {
+                countQuery = countQuery.not("return_date", "is", null);
+              } else if (filter === "outstanding") {
+                countQuery = countQuery.is("return_date", null);
+              }
+
+              countQuery.then(({ count, error: countError }) => {
+                if (countError) {
+                  console.error("Error fetching count for search:", countError);
+                }
+
+                // Re-use the same enrichment logic to get customer names and film titles
+                fetchEnrichedRentals(data || []).then((enrichedData) => {
+                  setRentals(enrichedData);
+                  setTotalPages(Math.ceil((count || 0) / itemsPerPage));
+                  setIsLoading(false);
+                });
+              });
+            });
+          } else {
+            // No matching customers
+            setRentals([]);
+            setTotalPages(1);
+            setIsLoading(false);
+          }
+        });
+    } else {
+      // If search term is empty, just do regular fetch
+      setCurrentPage(1);
+      fetchRentals();
+    }
+  };
+
+  // Helper function to fetch additional data for rentals
+  const fetchEnrichedRentals = async (rentalData: Rental[]) => {
+    if (!rentalData.length) return [];
+
+    try {
+      // Get customer names
+      const customerIds = rentalData.map((rental) => rental.customer_id);
+      const { data: customerData } = await supabase
+        .from("customer_list")
+        .select("id, name")
+        .in("id", customerIds);
+
+      // Get film titles
+      const inventoryIds = rentalData.map((rental) => rental.inventory_id);
+      const { data: inventoryData } = await supabase
+        .from("inventory")
+        .select("inventory_id, film_id")
+        .in("inventory_id", inventoryIds);
+
+      let filmData = [];
+      if (inventoryData && inventoryData.length > 0) {
+        const filmIds = inventoryData.map((inv) => inv.film_id);
+        const { data: films } = await supabase
+          .from("film")
+          .select("film_id, title")
+          .in("film_id", filmIds);
+
+        filmData = films || [];
+      }
+
+      // Combine all data
+      return rentalData.map((rental) => {
+        const customer = customerData?.find((c) => c.id === rental.customer_id);
+        const inventory = inventoryData?.find(
+          (i) => i.inventory_id === rental.inventory_id,
+        );
+        const film = inventory
+          ? filmData?.find((f: any) => f.film_id === inventory.film_id)
+          : null;
+
+        return {
+          ...rental,
+          customer_name: customer?.name || "Unknown Customer",
+          film_title: film?.title || "Unknown Film",
+          rental_status: rental.return_date ? "Returned" : "Outstanding",
+        };
+      });
+    } catch (error) {
+      console.error("Error enriching rentals:", error);
+      return rentalData;
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
