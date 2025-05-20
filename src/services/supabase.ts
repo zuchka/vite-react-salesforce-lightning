@@ -8,7 +8,7 @@ const supabaseKey =
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Types for our data models
-export interface Video {
+export type Video = {
   id: string;
   title: string;
   description?: string;
@@ -21,32 +21,32 @@ export interface Video {
   category_id?: string;
   user_id?: string;
   [key: string]: any;
-}
+};
 
-export interface User {
+export type User = {
   id: string;
   email?: string;
   full_name?: string;
   avatar_url?: string;
   created_at?: string;
   [key: string]: any;
-}
+};
 
-export interface Category {
+export type Category = {
   id: string;
   name: string;
   description?: string;
   [key: string]: any;
-}
+};
 
-export interface Comment {
+export type Comment = {
   id: string;
   content: string;
   user_id?: string;
   video_id?: string;
   created_at?: string;
   [key: string]: any;
-}
+};
 
 // Generic fetch function with pagination
 export async function fetchData<T>(
