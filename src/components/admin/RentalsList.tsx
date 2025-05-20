@@ -247,9 +247,7 @@ const RentalsList: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={handleKeyPress}
-              iconCategory="utility"
-              iconName="search"
-              iconPosition="left"
+              iconLeft={<Icon category="utility" name="search" />}
             />
             <Button
               label="Search"

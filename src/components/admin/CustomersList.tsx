@@ -162,9 +162,7 @@ const CustomersList: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={handleKeyPress}
-            iconCategory="utility"
-            iconName="search"
-            iconPosition="left"
+            iconLeft={<Icon category="utility" name="search" />}
           />
           <button
             className="slds-button slds-button_brand slds-m-left_small"

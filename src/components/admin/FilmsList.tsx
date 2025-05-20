@@ -9,7 +9,6 @@ import {
   ButtonGroup,
   Button,
   Pill,
-  PillContainer,
 } from "@salesforce/design-system-react";
 import { supabase } from "../../lib/supabaseClient";
 import LoadingSpinner from "./LoadingSpinner";
@@ -212,9 +211,7 @@ const FilmsList: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={handleKeyPress}
-              iconCategory="utility"
-              iconName="search"
-              iconPosition="left"
+              iconLeft={<Icon category="utility" name="search" />}
             />
           </div>
           <Button label="Search" onClick={handleSearch} variant="brand" />
@@ -233,7 +230,7 @@ const FilmsList: React.FC = () => {
     >
       <div className="slds-p-horizontal_small">
         <div className="slds-p-vertical_x-small">
-          <PillContainer>
+          <div className="slds-button-group" role="group">
             <Button
               key="all"
               variant={selectedCategory === null ? "brand" : "neutral"}
@@ -250,7 +247,7 @@ const FilmsList: React.FC = () => {
                 onClick={() => handleCategorySelect(category)}
               />
             ))}
-          </PillContainer>
+          </div>
         </div>
 
         {isLoading ? (
