@@ -59,9 +59,11 @@ const Analytics: React.FC = () => {
           // In a real app, this would use proper SQL analytics queries
 
           // 1. Get total count for the main table
-          const { count: totalCount } = await supabase
+          const { count: totalCount } = (await supabase
             .from(primaryTable)
-            .select("*", { count: "exact", head: true });
+            .select("*", { count: "exact", head: true })) as {
+            count: number | null;
+          };
 
           // 2. Try to find a category or type column to group by
           const potentialCategoryColumns = [
@@ -89,9 +91,8 @@ const Analytics: React.FC = () => {
           if (categoryColumn) {
             const { data: categoryData } = await supabase
               .from(primaryTable)
-              .select(`${categoryColumn}, count`)
               .select(`${categoryColumn}`)
-              .not(categoryColumn, "is", null);
+              .filter(`${categoryColumn}`, "not.is", null);
 
             if (categoryData) {
               // Count occurrences of each category

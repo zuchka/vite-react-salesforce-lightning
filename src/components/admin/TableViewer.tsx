@@ -9,7 +9,7 @@ import {
 } from "@salesforce/design-system-react";
 import DataTable from "./DataTable";
 import { fetchData, getTables, getTableColumns } from "../../lib/supabase";
-import { TableColumn, PaginatedResponse } from "../../types/supabase";
+import type { TableColumn } from "../../types/supabase";
 
 interface TableViewerProps {
   initialTable?: string;

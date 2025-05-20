@@ -7,7 +7,6 @@ import {
   Icon,
   Spinner,
 } from "@salesforce/design-system-react";
-import { PaginatedResponse } from "../../types/supabase";
 
 interface DataTableProps {
   title: string;
