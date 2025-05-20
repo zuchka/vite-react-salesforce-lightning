@@ -48,6 +48,39 @@ export type Comment = {
   [key: string]: any;
 };
 
+// Cache for table existence
+const tableExistsCache: Record<string, boolean> = {};
+
+// Check if a table exists in the database
+export async function checkTableExists(tableName: string): Promise<boolean> {
+  // Return from cache if available
+  if (tableExistsCache[tableName] !== undefined) {
+    return tableExistsCache[tableName];
+  }
+
+  try {
+    // Try to get the table schema
+    const { data, error } = await supabase
+      .from("information_schema.tables")
+      .select("table_name")
+      .eq("table_schema", "public")
+      .eq("table_name", tableName);
+
+    if (error) {
+      console.error(`Error checking if table exists: ${tableName}`, error);
+      return false;
+    }
+
+    const exists = Array.isArray(data) && data.length > 0;
+    // Cache the result
+    tableExistsCache[tableName] = exists;
+    return exists;
+  } catch (err) {
+    console.error(`Error in checkTableExists for ${tableName}:`, err);
+    return false;
+  }
+}
+
 // Generic fetch function with pagination
 export async function fetchData<T>(
   table: string,
@@ -57,35 +90,66 @@ export async function fetchData<T>(
   ascending: boolean = false,
   filters: Record<string, any> = {},
 ) {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let query = supabase
-    .from(table)
-    .select("*", { count: "exact" })
-    .order(orderBy, { ascending })
-    .range(from, to);
-
-  // Apply any filters
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query = query.eq(key, value);
+  try {
+    // First check if the table exists
+    const tableExists = await checkTableExists(table);
+    if (!tableExists) {
+      console.error(`Table does not exist: ${table}`);
+      return {
+        data: [],
+        error: new Error(`Table does not exist: ${table}`),
+        count: 0,
+        hasMore: false,
+        tableExists: false,
+      };
     }
-  });
 
-  const { data, error, count } = await query;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
 
-  if (error) {
-    console.error(`Error fetching ${table}:`, error);
-    return { data: [], error, count: 0, hasMore: false };
+    let query = supabase
+      .from(table)
+      .select("*", { count: "exact" })
+      .order(orderBy, { ascending })
+      .range(from, to);
+
+    // Apply any filters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        query = query.eq(key, value);
+      }
+    });
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error(`Error fetching ${table}:`, error);
+      return {
+        data: [],
+        error,
+        count: 0,
+        hasMore: false,
+        tableExists: true,
+      };
+    }
+
+    return {
+      data: data as T[],
+      error: null,
+      count: count || 0,
+      hasMore: count ? count > to + 1 : false,
+      tableExists: true,
+    };
+  } catch (err) {
+    console.error(`Error in fetchData for ${table}:`, err);
+    return {
+      data: [],
+      error: err instanceof Error ? err : new Error(String(err)),
+      count: 0,
+      hasMore: false,
+      tableExists: false,
+    };
   }
-
-  return {
-    data: data as T[],
-    error: null,
-    count: count || 0,
-    hasMore: count ? count > to + 1 : false,
-  };
 }
 
 // Specific functions for each data type
@@ -145,24 +209,19 @@ export async function fetchComments(
 // Fetch tables from the database schema
 export async function fetchTableNames() {
   try {
-    const { data, error } = await supabase.rpc("get_tables");
+    const { data, error } = await supabase
+      .from("information_schema.tables")
+      .select("table_name")
+      .eq("table_schema", "public");
 
     if (error) {
-      // If the RPC function doesn't exist, try an alternative approach
-      const { data: tables, error: tablesError } = await supabase
-        .from("pg_catalog.pg_tables")
-        .select("tablename")
-        .eq("schemaname", "public");
-
-      if (tablesError) {
-        console.error("Error fetching tables:", tablesError);
-        return { tables: [], error: tablesError };
-      }
-
-      return { tables: tables?.map((t) => t.tablename) || [], error: null };
+      console.error("Error fetching tables:", error);
+      return { tables: [], error };
     }
 
-    return { tables: data || [], error: null };
+    // Extract table names from the result
+    const tables = data ? data.map((row) => row.table_name) : [];
+    return { tables, error: null };
   } catch (err) {
     console.error("Error in fetchTableNames:", err);
     return { tables: [], error: err };
@@ -173,7 +232,7 @@ export async function fetchTableNames() {
 export async function getTableInfo(tableName: string) {
   try {
     const { data, error } = await supabase
-      .from(`information_schema.columns`)
+      .from("information_schema.columns")
       .select("column_name, data_type")
       .eq("table_schema", "public")
       .eq("table_name", tableName);
@@ -193,43 +252,84 @@ export async function getTableInfo(tableName: string) {
 // Get summary statistics
 export async function fetchStats() {
   try {
-    // Fetch count of videos
-    const { count: videoCount, error: videoError } = await supabase
-      .from("videos")
-      .select("*", { count: "exact", head: true });
+    // First check which tables exist
+    const videosExists = await checkTableExists("videos");
+    const usersExists = await checkTableExists("users");
+    const commentsExists = await checkTableExists("comments");
 
-    // Fetch count of users
-    const { count: userCount, error: userError } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
+    let videoCount = 0;
+    let userCount = 0;
+    let commentCount = 0;
+    let topVideos: Video[] = [];
+    let errors: any[] = [];
 
-    // Fetch count of comments
-    const { count: commentCount, error: commentError } = await supabase
-      .from("comments")
-      .select("*", { count: "exact", head: true });
+    // Only query tables that exist
+    if (videosExists) {
+      const { count, error } = await supabase
+        .from("videos")
+        .select("*", { count: "exact", head: true });
 
-    // Fetch most viewed videos
-    const { data: topVideos, error: topVideosError } = await supabase
-      .from("videos")
-      .select("*")
-      .order("views", { ascending: false })
-      .limit(5);
+      if (error) {
+        console.error("Error fetching video count:", error);
+        errors.push(error);
+      } else {
+        videoCount = count || 0;
+      }
 
-    if (videoError || userError || commentError || topVideosError) {
-      console.error(
-        "Error fetching stats:",
-        videoError || userError || commentError || topVideosError,
-      );
+      // Only try to fetch top videos if the videos table exists
+      const { data, error: topVideosError } = await supabase
+        .from("videos")
+        .select("*")
+        .order("views", { ascending: false })
+        .limit(5);
+
+      if (topVideosError) {
+        console.error("Error fetching top videos:", topVideosError);
+        errors.push(topVideosError);
+      } else {
+        topVideos = data || [];
+      }
+    }
+
+    if (usersExists) {
+      const { count, error } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error fetching user count:", error);
+        errors.push(error);
+      } else {
+        userCount = count || 0;
+      }
+    }
+
+    if (commentsExists) {
+      const { count, error } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error fetching comment count:", error);
+        errors.push(error);
+      } else {
+        commentCount = count || 0;
+      }
     }
 
     return {
       counts: {
-        videos: videoCount || 0,
-        users: userCount || 0,
-        comments: commentCount || 0,
+        videos: videoCount,
+        users: userCount,
+        comments: commentCount,
       },
-      topVideos: topVideos || [],
-      error: videoError || userError || commentError || topVideosError,
+      topVideos,
+      error: errors.length > 0 ? errors[0] : null,
+      tablesExist: {
+        videos: videosExists,
+        users: usersExists,
+        comments: commentsExists,
+      },
     };
   } catch (err) {
     console.error("Error in fetchStats:", err);
@@ -237,6 +337,11 @@ export async function fetchStats() {
       counts: { videos: 0, users: 0, comments: 0 },
       topVideos: [],
       error: err,
+      tablesExist: {
+        videos: false,
+        users: false,
+        comments: false,
+      },
     };
   }
 }

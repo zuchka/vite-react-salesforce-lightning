@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   GlobalNavigationBar,
@@ -20,6 +20,26 @@ import SettingsView from "./admin/SettingsView";
 
 function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Listen for events to change the active tab
+  useEffect(() => {
+    const handleTabChange = (event: CustomEvent<{ tab: string }>) => {
+      if (event.detail && event.detail.tab) {
+        setActiveTab(event.detail.tab);
+      }
+    };
+
+    // Add event listener
+    window.addEventListener("changeAdminTab", handleTabChange as EventListener);
+
+    // Clean up
+    return () => {
+      window.removeEventListener(
+        "changeAdminTab",
+        handleTabChange as EventListener,
+      );
+    };
+  }, []);
 
   // Render the appropriate component based on the active tab
   const renderContent = () => {

@@ -20,16 +20,26 @@ const VideosList: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tableExists, setTableExists] = useState(true);
   const pageSize = 25;
 
   const loadVideos = async (currentPage: number) => {
     try {
       setLoading(true);
-      // In a real implementation, you would use the searchTerm to filter results
-      const { data, error, count, hasMore } = await fetchVideos(
-        currentPage,
-        pageSize,
-      );
+      const {
+        data,
+        error,
+        count,
+        hasMore,
+        tableExists: exists,
+      } = await fetchVideos(currentPage, pageSize);
+
+      setTableExists(exists);
+
+      if (!exists) {
+        setError("The videos table does not exist in the database.");
+        return;
+      }
 
       if (error) {
         throw new Error(error.message);
@@ -40,7 +50,11 @@ const VideosList: React.FC = () => {
       setHasMore(hasMore);
     } catch (err) {
       console.error("Error loading videos:", err);
-      setError("Failed to load videos. Please try again later.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load videos. Please try again later.",
+      );
     } finally {
       setLoading(false);
     }
@@ -154,19 +168,104 @@ const VideosList: React.FC = () => {
     },
   ];
 
+  if (!tableExists) {
+    return (
+      <div className="slds-p-around_medium">
+        <h1 className="slds-text-heading_large slds-m-bottom_large">Videos</h1>
+
+        <Card className="admin-box">
+          <div className="slds-p-around_large slds-text-align_center">
+            <Icon
+              category="utility"
+              name="error"
+              size="large"
+              className="slds-m-bottom_medium"
+              style={{ fill: "#ffb75d", width: "3rem", height: "3rem" }}
+            />
+            <h2 className="slds-text-heading_medium slds-m-bottom_medium">
+              Videos Table Not Found
+            </h2>
+            <p className="slds-m-bottom_large">
+              The videos table doesn't exist in your Supabase database. You need
+              to create this table to manage videos.
+            </p>
+            <div
+              className="slds-box slds-theme_shade slds-m-bottom_medium"
+              style={{
+                backgroundColor: "#23243a",
+                border: "1px solid #3a3b4d",
+                textAlign: "left",
+              }}
+            >
+              <h4 className="slds-text-heading_small slds-m-bottom_small">
+                Create Videos Table
+              </h4>
+              <pre
+                style={{
+                  color: "#f4f4f6",
+                  overflow: "auto",
+                  padding: "0.5rem",
+                }}
+              >
+                {`CREATE TABLE videos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  url TEXT,
+  thumbnail_url TEXT,
+  duration INTEGER,
+  views INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  category_id UUID,
+  user_id UUID
+);`}
+              </pre>
+            </div>
+            <Button
+              label="Go to Database Explorer"
+              variant="brand"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("changeAdminTab", {
+                    detail: { tab: "explore" },
+                  }),
+                );
+              }}
+            />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="slds-p-around_large admin-box">
-        <div
-          className="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error"
-          role="alert"
-        >
-          <Icon
-            category="utility"
-            name="error"
-            className="slds-m-right_small"
-          />
-          <h2>{error}</h2>
+      <div className="slds-p-around_medium">
+        <h1 className="slds-text-heading_large slds-m-bottom_large">Videos</h1>
+
+        <div className="slds-p-around_large admin-box">
+          <div
+            className="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error"
+            role="alert"
+          >
+            <Icon
+              category="utility"
+              name="error"
+              className="slds-m-right_small"
+            />
+            <h2>{error}</h2>
+          </div>
+          <div className="slds-text-align_center slds-m-top_large">
+            <Button
+              label="Retry"
+              variant="brand"
+              onClick={() => {
+                setError(null);
+                loadVideos(1);
+              }}
+            />
+          </div>
         </div>
       </div>
     );
