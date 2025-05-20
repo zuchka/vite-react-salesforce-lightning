@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  Icon,
-  VerticalNavigation,
-  VerticalNavigationItem,
-} from "@salesforce/design-system-react";
+import { Icon, VerticalNavigation } from "@salesforce/design-system-react";
 
 interface SidebarProps {
   activeItem: string;
@@ -45,23 +41,24 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onSelect }) => {
         onSelect={(event, { item }) => {
           onSelect(item.id);
         }}
-      >
-        {navigationItems.map((item) => (
-          <VerticalNavigationItem
-            key={item.id}
-            id={item.id}
-            label={item.label}
-            icon={
-              <Icon
-                assistiveText={{ label: item.label }}
-                category="standard"
-                name={item.icon}
-                size="small"
-              />
-            }
-          />
-        ))}
-      </VerticalNavigation>
+        categories={[
+          {
+            id: "admin-menu",
+            items: navigationItems.map((item) => ({
+              id: item.id,
+              label: item.label,
+              icon: (
+                <Icon
+                  assistiveText={{ label: item.label }}
+                  category="standard"
+                  name={item.icon}
+                  size="small"
+                />
+              ),
+            })),
+          },
+        ]}
+      />
     </div>
   );
 };
