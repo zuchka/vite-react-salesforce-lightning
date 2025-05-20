@@ -7,6 +7,7 @@ import {
   Button,
   Spinner,
 } from "@salesforce/design-system-react";
+import supabase from "../lib/supabase";
 import "@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css";
 
 // Admin Components
@@ -30,10 +31,12 @@ import "../App.css";
 function Admin() {
   const [activeView, setActiveView] = useState("dashboard");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Handle sidebar navigation
   const handleNavigationSelect = (item: string) => {
     setLoading(true);
+    setError(null);
     setActiveView(item);
     // Simulate loading time
     setTimeout(() => {
@@ -41,8 +44,69 @@ function Admin() {
     }, 300);
   };
 
+  // Handle connection to Supabase on initial load
+  useEffect(() => {
+    // Verify Supabase connection
+    const checkConnection = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("film")
+          .select("film_id")
+          .limit(1);
+
+        if (error) {
+          console.error("Supabase connection error:", error);
+          setError(
+            "Failed to connect to the database. Please check your connection.",
+          );
+        } else {
+          console.log("Successfully connected to Supabase");
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Error checking Supabase connection:", err);
+        setError(
+          "Failed to connect to the database. Please check your connection.",
+        );
+      }
+    };
+
+    checkConnection();
+  }, []);
+
   // Render the appropriate component based on activeView
   const renderContent = () => {
+    if (error) {
+      return (
+        <div className="slds-p-around_medium">
+          <div
+            className="slds-notify slds-notify_alert slds-alert_error"
+            role="alert"
+          >
+            <Icon
+              category="utility"
+              name="error"
+              size="small"
+              className="slds-m-right_small"
+              style={{ fill: "white" }}
+            />
+            <h2>Database Connection Error</h2>
+            <p className="slds-m-top_small">{error}</p>
+            <p className="slds-m-top_small">
+              Please verify that your Supabase database is available and that
+              your credentials are correct.
+            </p>
+            <Button
+              label="Retry Connection"
+              variant="brand"
+              onClick={() => window.location.reload()}
+              className="slds-m-top_medium"
+            />
+          </div>
+        </div>
+      );
+    }
+
     if (loading) {
       return (
         <div className="slds-p-around_xx-large slds-align_absolute-center">

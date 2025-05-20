@@ -45,16 +45,18 @@ const FilmsList: React.FC = () => {
   async function fetchFilms() {
     setLoading(true);
     try {
+      console.log("Fetching films data...");
       // Count total films for pagination
-      const countQuery = supabase
+      const { count, error: countError } = await supabase
         .from("film")
         .select("*", { count: "exact", head: true });
 
-      if (searchTerm) {
-        countQuery.ilike("title", `%${searchTerm}%`);
+      if (countError) {
+        console.error("Error counting films:", countError);
+        throw countError;
       }
 
-      const { count } = await countQuery;
+      console.log(`Total films count: ${count}`);
       setTotalCount(count || 0);
 
       // Fetch films with pagination
@@ -84,30 +86,64 @@ const FilmsList: React.FC = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching films:", error);
+        throw error;
+      }
 
-      // Fetch categories for each film
-      const filmsWithCategories = await Promise.all(
-        (data || []).map(async (film) => {
-          const { data: filmCategories } = await supabase
-            .from("film_category")
-            .select(
-              `
-              category:category_id(name)
-            `,
-            )
-            .eq("film_id", film.film_id);
+      console.log(`Fetched ${data?.length || 0} films`);
 
-          return {
-            ...film,
-            categories: filmCategories?.map((fc) => fc.category.name) || [],
-          };
-        }),
-      );
+      if (!data || data.length === 0) {
+        console.log("No films data returned from query");
+        setFilms([]);
+        setLoading(false);
+        return;
+      }
 
-      setFilms(filmsWithCategories);
+      // Simplified approach - fetch films without categories for now
+      setFilms(data || []);
+      setLoading(false);
+
+      // In background, fetch categories and update state
+      try {
+        const filmsWithCategories = await Promise.all(
+          data.map(async (film) => {
+            try {
+              const { data: filmCategories } = await supabase
+                .from("film_category")
+                .select(
+                  `
+                  category:category_id(name)
+                `,
+                )
+                .eq("film_id", film.film_id);
+
+              return {
+                ...film,
+                categories:
+                  filmCategories?.map((fc) => fc.category?.name || "") || [],
+              };
+            } catch (catError) {
+              console.error(
+                `Error fetching categories for film ${film.film_id}:`,
+                catError,
+              );
+              return {
+                ...film,
+                categories: [],
+              };
+            }
+          }),
+        );
+
+        setFilms(filmsWithCategories);
+      } catch (categoriesError) {
+        console.error("Error fetching film categories:", categoriesError);
+        // We already have the films without categories, so no need to update loading state
+      }
     } catch (error) {
-      console.error("Error fetching films:", error);
+      console.error("Error in fetchFilms:", error);
+      setFilms([]);
     } finally {
       setLoading(false);
     }
@@ -145,7 +181,7 @@ const FilmsList: React.FC = () => {
       width: "35%",
       cell: (item) => (
         <DataTableCell title={item.description}>
-          {item.description.length > 100
+          {item.description && item.description.length > 100
             ? `${item.description.substring(0, 100)}...`
             : item.description}
         </DataTableCell>
@@ -158,7 +194,11 @@ const FilmsList: React.FC = () => {
     {
       label: "Length",
       property: "length",
-      cell: (item) => <DataTableCell>{item.length} min</DataTableCell>,
+      cell: (item) => (
+        <DataTableCell>
+          {item.length ? `${item.length} min` : "N/A"}
+        </DataTableCell>
+      ),
     },
     {
       label: "Rating",
@@ -167,13 +207,15 @@ const FilmsList: React.FC = () => {
     {
       label: "Rental Rate",
       property: "rental_rate",
-      cell: (item) => <DataTableCell>${item.rental_rate}</DataTableCell>,
+      cell: (item) => (
+        <DataTableCell>${item.rental_rate?.toFixed(2) || "0.00"}</DataTableCell>
+      ),
     },
     {
       label: "Categories",
       property: "categories",
       cell: (item) => (
-        <DataTableCell>{item.categories?.join(", ")}</DataTableCell>
+        <DataTableCell>{item.categories?.join(", ") || "N/A"}</DataTableCell>
       ),
     },
   ];
@@ -218,7 +260,7 @@ const FilmsList: React.FC = () => {
                 assistiveText={{ label: "Loading films" }}
               />
             </div>
-          ) : (
+          ) : films.length > 0 ? (
             <>
               <DataTable
                 items={films}
@@ -253,6 +295,19 @@ const FilmsList: React.FC = () => {
                 />
               </div>
             </>
+          ) : (
+            <div className="slds-p-around_medium slds-text-align_center">
+              <Icon
+                category="utility"
+                name="info"
+                size="small"
+                className="slds-m-right_small"
+                style={{ fill: "#b18cff" }}
+              />
+              {searchTerm
+                ? "No films match your search criteria"
+                : "No films data available"}
+            </div>
           )}
         </div>
       </Card>
