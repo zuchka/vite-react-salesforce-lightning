@@ -9,10 +9,11 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-    { id: "videos", label: "Videos", icon: "video" },
-    { id: "users", label: "Users", icon: "user" },
-    { id: "comments", label: "Comments", icon: "comments" },
-    { id: "categories", label: "Categories", icon: "picklist_type" },
+    { id: "films", label: "Films", icon: "video" },
+    { id: "actors", label: "Actors", icon: "user" },
+    { id: "customers", label: "Customers", icon: "people" },
+    { id: "rentals", label: "Rentals", icon: "service_appointment" },
+    { id: "categories", label: "Categories", icon: "product_item" },
     { id: "explore", label: "Database Explorer", icon: "database" },
     { id: "settings", label: "Settings", icon: "settings" },
   ];

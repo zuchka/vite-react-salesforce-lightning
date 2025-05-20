@@ -3,33 +3,48 @@ import { Card, Icon, Spinner, Button } from "@salesforce/design-system-react";
 import {
   fetchStats,
   fetchTableNames,
-  type Video,
+  type Film,
 } from "../../services/supabase";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<{
-    counts: { videos: number; users: number; comments: number };
-    topVideos: Video[];
+    counts: {
+      films: number;
+      actors: number;
+      customers: number;
+      rentals: number;
+      categories: number;
+    };
+    topFilms: Film[];
     error: any;
     tablesExist?: {
-      videos: boolean;
-      users: boolean;
-      comments: boolean;
+      film: boolean;
+      actor: boolean;
+      customer: boolean;
+      rental: boolean;
+      category: boolean;
     };
   }>({
-    counts: { videos: 0, users: 0, comments: 0 },
-    topVideos: [],
+    counts: {
+      films: 0,
+      actors: 0,
+      customers: 0,
+      rentals: 0,
+      categories: 0,
+    },
+    topFilms: [],
     error: null,
     tablesExist: {
-      videos: false,
-      users: false,
-      comments: false,
+      film: false,
+      actor: false,
+      customer: false,
+      rental: false,
+      category: false,
     },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allTables, setAllTables] = useState<string[]>([]);
-  const [showDbExplorer, setShowDbExplorer] = useState(false);
 
   useEffect(() => {
     const getStats = async () => {
@@ -46,16 +61,6 @@ const Dashboard: React.FC = () => {
 
         const result = await fetchStats();
         setStats(result);
-
-        // If no tables exist that we expect, show a message
-        if (
-          result.tablesExist &&
-          !result.tablesExist.videos &&
-          !result.tablesExist.users &&
-          !result.tablesExist.comments
-        ) {
-          setShowDbExplorer(true);
-        }
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
         setError(
@@ -102,417 +107,376 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // If we should show database explorer guidance
-  if (showDbExplorer) {
-    return (
-      <div className="slds-p-around_medium">
-        <h1 className="slds-text-heading_large slds-m-bottom_large">
-          Dashboard Overview
-        </h1>
-
-        <Card className="admin-box slds-m-bottom_large">
-          <div className="slds-p-around_medium">
-            <div className="slds-grid slds-grid_align-center">
-              <div className="slds-col slds-size_1-of-1 slds-medium-size_3-of-4 slds-text-align_center">
-                <Icon
-                  category="utility"
-                  name="database"
-                  size="large"
-                  className="slds-m-bottom_medium"
-                  style={{ fill: "#b18cff", width: "3rem", height: "3rem" }}
-                />
-                <h2 className="slds-text-heading_medium slds-m-bottom_medium">
-                  Database Schema Not Found
-                </h2>
-                <p className="slds-m-bottom_medium">
-                  We couldn't find the expected database tables (videos, users,
-                  comments) in your Supabase database. Your database contains
-                  the following tables:
-                </p>
-
-                {allTables.length > 0 ? (
-                  <ul className="slds-list_dotted slds-m-vertical_medium">
-                    {allTables.map((table) => (
-                      <li key={table} className="slds-text-color_success">
-                        {table}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="slds-text-color_weak slds-m-vertical_medium">
-                    No tables found in the database.
-                  </p>
-                )}
-
-                <p className="slds-m-top_medium slds-m-bottom_large">
-                  You can use the Database Explorer to browse your existing
-                  tables or create the necessary tables to use all dashboard
-                  features.
-                </p>
-
-                <Button
-                  label="Go to Database Explorer"
-                  variant="brand"
-                  onClick={() => {
-                    // Using window.dispatchEvent to communicate with the Admin component to change the active tab
-                    window.dispatchEvent(
-                      new CustomEvent("changeAdminTab", {
-                        detail: { tab: "explore" },
-                      }),
-                    );
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card
-          heading="Getting Started"
-          icon={<Icon category="standard" name="education" size="small" />}
-          className="admin-box"
-        >
-          <div className="slds-p-around_medium">
-            <h3 className="slds-text-heading_small slds-m-bottom_medium">
-              How to Create Required Tables
-            </h3>
-            <p className="slds-m-bottom_medium">
-              To use all features of this admin dashboard, you'll need to create
-              the following tables in your Supabase database:
-            </p>
-
-            <div
-              className="slds-box slds-theme_shade slds-m-bottom_medium"
-              style={{
-                backgroundColor: "#23243a",
-                border: "1px solid #3a3b4d",
-              }}
-            >
-              <h4 className="slds-text-heading_small slds-m-bottom_small">
-                videos
-              </h4>
-              <pre
-                style={{
-                  color: "#f4f4f6",
-                  overflow: "auto",
-                  padding: "0.5rem",
-                }}
-              >
-                {`CREATE TABLE videos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  url TEXT,
-  thumbnail_url TEXT,
-  duration INTEGER,
-  views INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  category_id UUID,
-  user_id UUID
-);`}
-              </pre>
-            </div>
-
-            <div
-              className="slds-box slds-theme_shade slds-m-bottom_medium"
-              style={{
-                backgroundColor: "#23243a",
-                border: "1px solid #3a3b4d",
-              }}
-            >
-              <h4 className="slds-text-heading_small slds-m-bottom_small">
-                users
-              </h4>
-              <pre
-                style={{
-                  color: "#f4f4f6",
-                  overflow: "auto",
-                  padding: "0.5rem",
-                }}
-              >
-                {`CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  full_name TEXT,
-  avatar_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);`}
-              </pre>
-            </div>
-
-            <div
-              className="slds-box slds-theme_shade slds-m-bottom_medium"
-              style={{
-                backgroundColor: "#23243a",
-                border: "1px solid #3a3b4d",
-              }}
-            >
-              <h4 className="slds-text-heading_small slds-m-bottom_small">
-                comments
-              </h4>
-              <pre
-                style={{
-                  color: "#f4f4f6",
-                  overflow: "auto",
-                  padding: "0.5rem",
-                }}
-              >
-                {`CREATE TABLE comments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  content TEXT NOT NULL,
-  user_id UUID REFERENCES users(id),
-  video_id UUID REFERENCES videos(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);`}
-              </pre>
-            </div>
-
-            <div
-              className="slds-box slds-theme_shade slds-m-bottom_medium"
-              style={{
-                backgroundColor: "#23243a",
-                border: "1px solid #3a3b4d",
-              }}
-            >
-              <h4 className="slds-text-heading_small slds-m-bottom_small">
-                categories
-              </h4>
-              <pre
-                style={{
-                  color: "#f4f4f6",
-                  overflow: "auto",
-                  padding: "0.5rem",
-                }}
-              >
-                {`CREATE TABLE categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  description TEXT
-);`}
-              </pre>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="slds-p-around_medium">
       <h1 className="slds-text-heading_large slds-m-bottom_large">
-        Dashboard Overview
+        DVD Rental Dashboard
       </h1>
 
       {/* Key Metrics */}
       <div className="slds-grid slds-gutters slds-wrap slds-m-bottom_large">
-        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-p-around_x-small">
+        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-around_x-small">
           <Card
-            heading="Total Videos"
+            heading="Total Films"
             icon={<Icon category="standard" name="video" size="small" />}
             className="admin-box"
             style={{ height: "150px" }}
-            footer={
-              !stats.tablesExist?.videos && (
-                <div className="slds-text-color_weak slds-text-align_center">
-                  Table not found
-                </div>
-              )
-            }
           >
             <div className="slds-text-align_center slds-p-around_medium">
-              {stats.tablesExist?.videos ? (
-                <span
-                  className="slds-text-heading_large"
-                  style={{ color: "#b18cff", fontWeight: "bold" }}
-                >
-                  {stats.counts.videos.toLocaleString()}
-                </span>
-              ) : (
-                <Icon
-                  category="utility"
-                  name="error"
-                  size="small"
-                  className="slds-m-right_x-small"
-                  style={{ fill: "#ffb75d" }}
-                />
-              )}
+              <span
+                className="slds-text-heading_large"
+                style={{ color: "#b18cff", fontWeight: "bold" }}
+              >
+                {stats.counts.films.toLocaleString()}
+              </span>
             </div>
           </Card>
         </div>
 
-        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-p-around_x-small">
+        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-around_x-small">
           <Card
-            heading="Total Users"
+            heading="Actors"
             icon={<Icon category="standard" name="user" size="small" />}
             className="admin-box"
             style={{ height: "150px" }}
-            footer={
-              !stats.tablesExist?.users && (
-                <div className="slds-text-color_weak slds-text-align_center">
-                  Table not found
-                </div>
-              )
-            }
           >
             <div className="slds-text-align_center slds-p-around_medium">
-              {stats.tablesExist?.users ? (
-                <span
-                  className="slds-text-heading_large"
-                  style={{ color: "#b18cff", fontWeight: "bold" }}
-                >
-                  {stats.counts.users.toLocaleString()}
-                </span>
-              ) : (
-                <Icon
-                  category="utility"
-                  name="error"
-                  size="small"
-                  className="slds-m-right_x-small"
-                  style={{ fill: "#ffb75d" }}
-                />
-              )}
+              <span
+                className="slds-text-heading_large"
+                style={{ color: "#b18cff", fontWeight: "bold" }}
+              >
+                {stats.counts.actors.toLocaleString()}
+              </span>
             </div>
           </Card>
         </div>
 
-        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-p-around_x-small">
+        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-around_x-small">
           <Card
-            heading="Total Comments"
-            icon={<Icon category="standard" name="comments" size="small" />}
+            heading="Customers"
+            icon={<Icon category="standard" name="people" size="small" />}
             className="admin-box"
             style={{ height: "150px" }}
-            footer={
-              !stats.tablesExist?.comments && (
-                <div className="slds-text-color_weak slds-text-align_center">
-                  Table not found
-                </div>
-              )
-            }
           >
             <div className="slds-text-align_center slds-p-around_medium">
-              {stats.tablesExist?.comments ? (
-                <span
-                  className="slds-text-heading_large"
-                  style={{ color: "#b18cff", fontWeight: "bold" }}
-                >
-                  {stats.counts.comments.toLocaleString()}
-                </span>
-              ) : (
-                <Icon
-                  category="utility"
-                  name="error"
-                  size="small"
-                  className="slds-m-right_x-small"
-                  style={{ fill: "#ffb75d" }}
-                />
-              )}
+              <span
+                className="slds-text-heading_large"
+                style={{ color: "#b18cff", fontWeight: "bold" }}
+              >
+                {stats.counts.customers.toLocaleString()}
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-around_x-small">
+          <Card
+            heading="Rentals"
+            icon={
+              <Icon
+                category="standard"
+                name="service_appointment"
+                size="small"
+              />
+            }
+            className="admin-box"
+            style={{ height: "150px" }}
+          >
+            <div className="slds-text-align_center slds-p-around_medium">
+              <span
+                className="slds-text-heading_large"
+                style={{ color: "#b18cff", fontWeight: "bold" }}
+              >
+                {stats.counts.rentals.toLocaleString()}
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-around_x-small">
+          <Card
+            heading="Categories"
+            icon={<Icon category="standard" name="product_item" size="small" />}
+            className="admin-box"
+            style={{ height: "150px" }}
+          >
+            <div className="slds-text-align_center slds-p-around_medium">
+              <span
+                className="slds-text-heading_large"
+                style={{ color: "#b18cff", fontWeight: "bold" }}
+              >
+                {stats.counts.categories.toLocaleString()}
+              </span>
             </div>
           </Card>
         </div>
       </div>
 
-      {/* Top Videos */}
+      {/* Top Films */}
       <Card
-        heading="Top Videos"
+        heading="Premium Films"
         icon={<Icon category="standard" name="video" size="small" />}
         className="admin-box slds-m-bottom_large"
-        footer={
-          !stats.tablesExist?.videos && (
-            <div className="slds-text-color_weak slds-text-align_center">
-              Videos table not found
-            </div>
-          )
-        }
       >
         <div className="slds-p-around_medium">
-          {stats.tablesExist?.videos ? (
-            stats.topVideos.length > 0 ? (
-              <table className="slds-table slds-table_cell-buffer slds-table_bordered">
-                <thead>
-                  <tr className="slds-line-height_reset">
-                    <th scope="col">
-                      <div className="slds-truncate" title="Title">
-                        Title
+          {stats.topFilms.length > 0 ? (
+            <table className="slds-table slds-table_cell-buffer slds-table_bordered">
+              <thead>
+                <tr className="slds-line-height_reset">
+                  <th scope="col">
+                    <div className="slds-truncate" title="Title">
+                      Title
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div className="slds-truncate" title="Rating">
+                      Rating
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div className="slds-truncate" title="Rental Rate">
+                      Rental Rate
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div className="slds-truncate" title="Replacement Cost">
+                      Replacement Cost
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div className="slds-truncate" title="Length">
+                      Length (min)
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.topFilms.map((film) => (
+                  <tr key={film.film_id}>
+                    <td>
+                      <div className="slds-truncate" title={film.title}>
+                        {film.title || "Untitled"}
                       </div>
-                    </th>
-                    <th scope="col">
-                      <div className="slds-truncate" title="Views">
-                        Views
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title={film.rating}>
+                        {film.rating || "Unrated"}
                       </div>
-                    </th>
-                    <th scope="col">
-                      <div className="slds-truncate" title="Duration">
-                        Duration
+                    </td>
+                    <td>
+                      <div
+                        className="slds-truncate"
+                        title={`$${film.rental_rate}`}
+                      >
+                        ${film.rental_rate?.toFixed(2) || "0.00"}
                       </div>
-                    </th>
-                    <th scope="col">
-                      <div className="slds-truncate" title="Created">
-                        Created
+                    </td>
+                    <td>
+                      <div
+                        className="slds-truncate"
+                        title={`$${film.replacement_cost}`}
+                      >
+                        ${film.replacement_cost?.toFixed(2) || "0.00"}
                       </div>
-                    </th>
+                    </td>
+                    <td>
+                      <div
+                        className="slds-truncate"
+                        title={`${film.length} min`}
+                      >
+                        {film.length || "N/A"} min
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {stats.topVideos.map((video) => (
-                    <tr key={video.id}>
-                      <td>
-                        <div className="slds-truncate" title={video.title}>
-                          {video.title || "Untitled"}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="slds-truncate" title={`${video.views}`}>
-                          {video.views?.toLocaleString() || 0}
-                        </div>
-                      </td>
-                      <td>
-                        <div
-                          className="slds-truncate"
-                          title={`${video.duration}`}
-                        >
-                          {video.duration
-                            ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, "0")}`
-                            : "N/A"}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="slds-truncate" title={video.created_at}>
-                          {video.created_at
-                            ? new Date(video.created_at).toLocaleDateString()
-                            : "N/A"}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="slds-text-align_center slds-p-around_medium slds-text-color_weak">
-                No videos found.
-              </div>
-            )
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <div className="slds-text-align_center slds-p-around_medium">
-              <Icon
-                category="utility"
-                name="error"
-                size="small"
-                className="slds-m-right_x-small"
-                style={{ fill: "#ffb75d" }}
-              />
-              <span className="slds-text-color_weak">
-                Videos table not found in database
-              </span>
+            <div className="slds-text-align_center slds-p-around_medium slds-text-color_weak">
+              No films found.
             </div>
           )}
         </div>
       </Card>
 
-      {/* Recent Activity - Placeholder */}
+      {/* Film Categories */}
       <Card
-        heading="Recent Activity"
-        icon={<Icon category="standard" name="event" size="small" />}
+        heading="Film by Category"
+        icon={<Icon category="standard" name="product_item" size="small" />}
+        className="admin-box slds-m-bottom_large"
+      >
+        <div className="slds-p-around_medium">
+          <div className="slds-grid slds-gutters slds-wrap">
+            <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <table className="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                  <tr className="slds-line-height_reset">
+                    <th scope="col">
+                      <div className="slds-truncate" title="Category">
+                        Category
+                      </div>
+                    </th>
+                    <th scope="col">
+                      <div className="slds-truncate" title="Film Count">
+                        Film Count
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Action">
+                        Action
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="64">
+                        64
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Animation">
+                        Animation
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="66">
+                        66
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Children">
+                        Children
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="60">
+                        60
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Classics">
+                        Classics
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="57">
+                        57
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Comedy">
+                        Comedy
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="58">
+                        58
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <table className="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                  <tr className="slds-line-height_reset">
+                    <th scope="col">
+                      <div className="slds-truncate" title="Category">
+                        Category
+                      </div>
+                    </th>
+                    <th scope="col">
+                      <div className="slds-truncate" title="Film Count">
+                        Film Count
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Documentary">
+                        Documentary
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="68">
+                        68
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Drama">
+                        Drama
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="62">
+                        62
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Family">
+                        Family
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="69">
+                        69
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Foreign">
+                        Foreign
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="73">
+                        73
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div className="slds-truncate" title="Games">
+                        Games
+                      </div>
+                    </td>
+                    <td>
+                      <div className="slds-truncate" title="61">
+                        61
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Recent Activity - Recent Rentals */}
+      <Card
+        heading="Recent Rentals"
+        icon={
+          <Icon category="standard" name="service_appointment" size="small" />
+        }
         className="admin-box"
       >
         <div className="slds-p-around_medium">
@@ -525,7 +489,7 @@ const Dashboard: React.FC = () => {
                       <div className="slds-icon_container slds-icon-standard-event">
                         <Icon
                           category="standard"
-                          name="user"
+                          name="service_appointment"
                           size="small"
                           className="slds-icon"
                         />
@@ -537,7 +501,7 @@ const Dashboard: React.FC = () => {
                           className="slds-text-heading_small"
                           style={{ color: "#f4f4f6" }}
                         >
-                          New user registered
+                          Film Rental: CHAMBER ITALIAN
                         </p>
                         <p className="slds-timeline__date">Today</p>
                       </div>
@@ -545,7 +509,7 @@ const Dashboard: React.FC = () => {
                         className="slds-m-top_x-small"
                         style={{ color: "#b18cff" }}
                       >
-                        User ID: 12345
+                        Customer: MARY SMITH
                       </p>
                     </div>
                   </div>
@@ -558,7 +522,7 @@ const Dashboard: React.FC = () => {
                       <div className="slds-icon_container slds-icon-standard-event">
                         <Icon
                           category="standard"
-                          name="video"
+                          name="service_appointment"
                           size="small"
                           className="slds-icon"
                         />
@@ -570,7 +534,7 @@ const Dashboard: React.FC = () => {
                           className="slds-text-heading_small"
                           style={{ color: "#f4f4f6" }}
                         >
-                          New video uploaded
+                          Film Rental: OKLAHOMA JUMANJI
                         </p>
                         <p className="slds-timeline__date">Yesterday</p>
                       </div>
@@ -578,7 +542,7 @@ const Dashboard: React.FC = () => {
                         className="slds-m-top_x-small"
                         style={{ color: "#b18cff" }}
                       >
-                        Video ID: 7890
+                        Customer: JOHN DOE
                       </p>
                     </div>
                   </div>
@@ -591,19 +555,19 @@ const Dashboard: React.FC = () => {
                       <div className="slds-icon_container slds-icon-standard-event">
                         <Icon
                           category="standard"
-                          name="comments"
+                          name="return_order"
                           size="small"
                           className="slds-icon"
                         />
                       </div>
                     </div>
                     <div className="slds-media__body">
-                      <div className="slds-grid slds-grid_align-spread">
+                      <div className="slds-grid slds_grid_align-spread">
                         <p
                           className="slds-text-heading_small"
                           style={{ color: "#f4f4f6" }}
                         >
-                          New comment posted
+                          Film Return: GOODFELLAS SALUTE
                         </p>
                         <p className="slds-timeline__date">2 days ago</p>
                       </div>
@@ -611,7 +575,7 @@ const Dashboard: React.FC = () => {
                         className="slds-m-top_x-small"
                         style={{ color: "#b18cff" }}
                       >
-                        Comment ID: 3456
+                        Customer: JENNIFER DAVIS
                       </p>
                     </div>
                   </div>

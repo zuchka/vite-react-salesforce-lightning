@@ -7,44 +7,62 @@ const supabaseKey =
 
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Types for our data models
-export type Video = {
-  id: string;
+// Types for our data models based on DVD rental schema
+export type Film = {
+  film_id: number;
   title: string;
   description?: string;
-  url?: string;
-  thumbnail_url?: string;
-  duration?: number;
-  views?: number;
-  created_at?: string;
-  updated_at?: string;
-  category_id?: string;
-  user_id?: string;
+  release_year?: number;
+  language_id?: number;
+  original_language_id?: number;
+  rental_duration?: number;
+  rental_rate?: number;
+  length?: number;
+  replacement_cost?: number;
+  rating?: string;
+  last_update?: string;
+  special_features?: string[];
+  fulltext?: string;
   [key: string]: any;
 };
 
-export type User = {
-  id: string;
+export type Actor = {
+  actor_id: number;
+  first_name: string;
+  last_name: string;
+  last_update?: string;
+  [key: string]: any;
+};
+
+export type Customer = {
+  customer_id: number;
+  store_id?: number;
+  first_name: string;
+  last_name: string;
   email?: string;
-  full_name?: string;
-  avatar_url?: string;
-  created_at?: string;
+  address_id?: number;
+  activebool?: boolean;
+  create_date?: string;
+  last_update?: string;
+  active?: number;
   [key: string]: any;
 };
 
 export type Category = {
-  id: string;
+  category_id: number;
   name: string;
-  description?: string;
+  last_update?: string;
   [key: string]: any;
 };
 
-export type Comment = {
-  id: string;
-  content: string;
-  user_id?: string;
-  video_id?: string;
-  created_at?: string;
+export type Rental = {
+  rental_id: number;
+  rental_date: string;
+  inventory_id: number;
+  customer_id: number;
+  return_date?: string;
+  staff_id: number;
+  last_update: string;
   [key: string]: any;
 };
 
@@ -86,7 +104,7 @@ export async function fetchData<T>(
   table: string,
   page: number = 1,
   pageSize: number = 25,
-  orderBy: string = "created_at",
+  orderBy: string = "last_update",
   ascending: boolean = false,
   filters: Record<string, any> = {},
 ) {
@@ -153,27 +171,35 @@ export async function fetchData<T>(
 }
 
 // Specific functions for each data type
-export async function fetchVideos(
+export async function fetchFilms(
   page: number = 1,
   pageSize: number = 25,
   filters: Record<string, any> = {},
 ) {
-  return fetchData<Video>(
-    "videos",
-    page,
-    pageSize,
-    "created_at",
-    false,
-    filters,
-  );
+  return fetchData<Film>("film", page, pageSize, "title", true, filters);
 }
 
-export async function fetchUsers(
+export async function fetchActors(
   page: number = 1,
   pageSize: number = 25,
   filters: Record<string, any> = {},
 ) {
-  return fetchData<User>("users", page, pageSize, "created_at", false, filters);
+  return fetchData<Actor>("actor", page, pageSize, "last_name", true, filters);
+}
+
+export async function fetchCustomers(
+  page: number = 1,
+  pageSize: number = 25,
+  filters: Record<string, any> = {},
+) {
+  return fetchData<Customer>(
+    "customer",
+    page,
+    pageSize,
+    "last_name",
+    true,
+    filters,
+  );
 }
 
 export async function fetchCategories(
@@ -181,26 +207,19 @@ export async function fetchCategories(
   pageSize: number = 25,
   filters: Record<string, any> = {},
 ) {
-  return fetchData<Category>(
-    "categories",
-    page,
-    pageSize,
-    "name",
-    true,
-    filters,
-  );
+  return fetchData<Category>("category", page, pageSize, "name", true, filters);
 }
 
-export async function fetchComments(
+export async function fetchRentals(
   page: number = 1,
   pageSize: number = 25,
   filters: Record<string, any> = {},
 ) {
-  return fetchData<Comment>(
-    "comments",
+  return fetchData<Rental>(
+    "rental",
     page,
     pageSize,
-    "created_at",
+    "rental_date",
     false,
     filters,
   );
@@ -252,96 +271,186 @@ export async function getTableInfo(tableName: string) {
 // Get summary statistics
 export async function fetchStats() {
   try {
-    // First check which tables exist
-    const videosExists = await checkTableExists("videos");
-    const usersExists = await checkTableExists("users");
-    const commentsExists = await checkTableExists("comments");
+    // Check which tables exist
+    const filmExists = await checkTableExists("film");
+    const actorExists = await checkTableExists("actor");
+    const customerExists = await checkTableExists("customer");
+    const rentalExists = await checkTableExists("rental");
+    const categoryExists = await checkTableExists("category");
 
-    let videoCount = 0;
-    let userCount = 0;
-    let commentCount = 0;
-    let topVideos: Video[] = [];
+    let filmCount = 0;
+    let actorCount = 0;
+    let customerCount = 0;
+    let rentalCount = 0;
+    let categoryCount = 0;
+    let topFilms: Film[] = [];
     let errors: any[] = [];
 
     // Only query tables that exist
-    if (videosExists) {
+    if (filmExists) {
       const { count, error } = await supabase
-        .from("videos")
+        .from("film")
         .select("*", { count: "exact", head: true });
 
       if (error) {
-        console.error("Error fetching video count:", error);
+        console.error("Error fetching film count:", error);
         errors.push(error);
       } else {
-        videoCount = count || 0;
+        filmCount = count || 0;
       }
 
-      // Only try to fetch top videos if the videos table exists
-      const { data, error: topVideosError } = await supabase
-        .from("videos")
+      // Only try to fetch top films if the film table exists
+      const { data, error: topFilmsError } = await supabase
+        .from("film")
         .select("*")
-        .order("views", { ascending: false })
+        .order("rental_rate", { ascending: false })
         .limit(5);
 
-      if (topVideosError) {
-        console.error("Error fetching top videos:", topVideosError);
-        errors.push(topVideosError);
+      if (topFilmsError) {
+        console.error("Error fetching top films:", topFilmsError);
+        errors.push(topFilmsError);
       } else {
-        topVideos = data || [];
+        topFilms = data || [];
       }
     }
 
-    if (usersExists) {
+    if (actorExists) {
       const { count, error } = await supabase
-        .from("users")
+        .from("actor")
         .select("*", { count: "exact", head: true });
 
       if (error) {
-        console.error("Error fetching user count:", error);
+        console.error("Error fetching actor count:", error);
         errors.push(error);
       } else {
-        userCount = count || 0;
+        actorCount = count || 0;
       }
     }
 
-    if (commentsExists) {
+    if (customerExists) {
       const { count, error } = await supabase
-        .from("comments")
+        .from("customer")
         .select("*", { count: "exact", head: true });
 
       if (error) {
-        console.error("Error fetching comment count:", error);
+        console.error("Error fetching customer count:", error);
         errors.push(error);
       } else {
-        commentCount = count || 0;
+        customerCount = count || 0;
+      }
+    }
+
+    if (rentalExists) {
+      const { count, error } = await supabase
+        .from("rental")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error fetching rental count:", error);
+        errors.push(error);
+      } else {
+        rentalCount = count || 0;
+      }
+    }
+
+    if (categoryExists) {
+      const { count, error } = await supabase
+        .from("category")
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        console.error("Error fetching category count:", error);
+        errors.push(error);
+      } else {
+        categoryCount = count || 0;
       }
     }
 
     return {
       counts: {
-        videos: videoCount,
-        users: userCount,
-        comments: commentCount,
+        films: filmCount,
+        actors: actorCount,
+        customers: customerCount,
+        rentals: rentalCount,
+        categories: categoryCount,
       },
-      topVideos,
+      topFilms,
       error: errors.length > 0 ? errors[0] : null,
       tablesExist: {
-        videos: videosExists,
-        users: usersExists,
-        comments: commentsExists,
+        film: filmExists,
+        actor: actorExists,
+        customer: customerExists,
+        rental: rentalExists,
+        category: categoryExists,
       },
     };
   } catch (err) {
     console.error("Error in fetchStats:", err);
     return {
-      counts: { videos: 0, users: 0, comments: 0 },
-      topVideos: [],
+      counts: { films: 0, actors: 0, customers: 0, rentals: 0, categories: 0 },
+      topFilms: [],
       error: err,
       tablesExist: {
-        videos: false,
-        users: false,
-        comments: false,
+        film: false,
+        actor: false,
+        customer: false,
+        rental: false,
+        category: false,
       },
     };
+  }
+}
+
+// Get recent rentals
+export async function fetchRecentRentals(limit: number = 5) {
+  try {
+    const { data, error } = await supabase
+      .from("rental")
+      .select(
+        `
+        rental_id,
+        rental_date,
+        return_date,
+        customer:customer_id(first_name, last_name),
+        inventory:inventory_id(film:film_id(title))
+      `,
+      )
+      .order("rental_date", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("Error fetching recent rentals:", error);
+      return { rentals: [], error };
+    }
+
+    return { rentals: data || [], error: null };
+  } catch (err) {
+    console.error("Error in fetchRecentRentals:", err);
+    return { rentals: [], error: err };
+  }
+}
+
+// Get film categories with counts
+export async function fetchFilmCategoryCounts() {
+  try {
+    const { data, error } = await supabase
+      .from("film_category")
+      .select(
+        `
+        category:category_id(name),
+        count:film_id(count)
+      `,
+      )
+      .limit(10);
+
+    if (error) {
+      console.error("Error fetching film categories:", error);
+      return { categories: [], error };
+    }
+
+    return { categories: data || [], error: null };
+  } catch (err) {
+    console.error("Error in fetchFilmCategoryCounts:", err);
+    return { categories: [], error: err };
   }
 }

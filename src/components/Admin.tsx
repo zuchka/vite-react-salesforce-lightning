@@ -11,9 +11,10 @@ import "../App.css";
 // Import admin components
 import Sidebar from "./admin/Sidebar";
 import Dashboard from "./admin/Dashboard";
-import VideosList from "./admin/VideosList";
-import UsersList from "./admin/UsersList";
-import CommentsView from "./admin/CommentsView";
+import FilmsList from "./admin/FilmsList";
+import ActorsList from "./admin/ActorsList";
+import CustomersList from "./admin/CustomersList";
+import RentalsList from "./admin/RentalsList";
 import CategoriesView from "./admin/CategoriesView";
 import DatabaseExplorer from "./admin/DatabaseExplorer";
 import SettingsView from "./admin/SettingsView";
@@ -46,12 +47,14 @@ function Admin() {
     switch (activeTab) {
       case "dashboard":
         return <Dashboard />;
-      case "videos":
-        return <VideosList />;
-      case "users":
-        return <UsersList />;
-      case "comments":
-        return <CommentsView />;
+      case "films":
+        return <FilmsList />;
+      case "actors":
+        return <ActorsList />;
+      case "customers":
+        return <CustomersList />;
+      case "rentals":
+        return <RentalsList />;
       case "categories":
         return <CategoriesView />;
       case "explore":
